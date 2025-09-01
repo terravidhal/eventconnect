@@ -1,0 +1,1854 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "EventConnect API",
+        "description": "API complète pour la gestion d'événements avec système de réservation",
+        "contact": {
+            "name": "EventConnect Team",
+            "email": "support@eventconnect.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Serveur de développement local"
+        }
+    ],
+    "paths": {
+        "/register": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Inscription d'un nouvel utilisateur",
+                "description": "Crée un nouveau compte utilisateur et retourne un token d'authentification",
+                "operationId": "registerUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Nom complet de l'utilisateur",
+                                        "type": "string",
+                                        "example": "Jean Dupont"
+                                    },
+                                    "email": {
+                                        "description": "Email unique de l'utilisateur",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "jean.dupont@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Mot de passe (minimum 8 caractères)",
+                                        "type": "string",
+                                        "minLength": 8,
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Confirmation du mot de passe",
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "phone": {
+                                        "description": "Numéro de téléphone (optionnel)",
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "role": {
+                                        "description": "Rôle de l'utilisateur",
+                                        "type": "string",
+                                        "enum": [
+                                            "participant",
+                                            "organisateur"
+                                        ],
+                                        "example": "participant"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Inscription réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Inscription réussie"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Jean Dupont"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "jean.dupont@example.com"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "participant"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "description": "Token JWT pour l'authentification",
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Connexion d'un utilisateur",
+                "description": "Authentifie un utilisateur et retourne un token d'authentification",
+                "operationId": "loginUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Email de l'utilisateur",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "jean.dupont@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Mot de passe de l'utilisateur",
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Connexion réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Connexion réussie"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Jean Dupont"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "jean.dupont@example.com"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "participant"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "description": "Token JWT pour l'authentification",
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Déconnexion de l'utilisateur",
+                "description": "Déconnecte l'utilisateur et invalide le token d'authentification",
+                "operationId": "logoutUser",
+                "responses": {
+                    "200": {
+                        "description": "Déconnexion réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Déconnexion réussie"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/user": {
+            "get": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Récupérer le profil utilisateur",
+                "description": "Récupère les informations de l'utilisateur actuellement connecté",
+                "operationId": "getUserProfile",
+                "responses": {
+                    "200": {
+                        "description": "Profil utilisateur récupéré avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Jean Dupont"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "jean.dupont@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "0123456789"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "participant"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Mettre à jour le profil utilisateur",
+                "description": "Met à jour les informations du profil de l'utilisateur connecté",
+                "operationId": "updateUserProfile",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Nouveau nom",
+                                        "type": "string",
+                                        "example": "Jean Dupont Modifié"
+                                    },
+                                    "phone": {
+                                        "description": "Nouveau téléphone",
+                                        "type": "string",
+                                        "example": "0987654321"
+                                    },
+                                    "avatar": {
+                                        "description": "Nouvel avatar",
+                                        "type": "string",
+                                        "example": "https://example.com/avatar.jpg"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil mis à jour avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profil mis à jour avec succès"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Jean Dupont Modifié"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "jean.dupont@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "0987654321"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "participant"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events": {
+            "get": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Liste des événements",
+                "description": "Récupère la liste paginée des événements avec filtres optionnels",
+                "operationId": "getEvents",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "ID de la catégorie",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Terme de recherche",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Statut de l'événement",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "published",
+                                "cancelled"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des événements récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Event"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Créer un événement",
+                "description": "Crée un nouvel événement (réservé aux organisateurs)",
+                "operationId": "createEvent",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "description",
+                                    "date",
+                                    "location",
+                                    "capacity",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "description": "Titre de l'événement",
+                                        "type": "string",
+                                        "example": "Concert Jazz"
+                                    },
+                                    "description": {
+                                        "description": "Description détaillée",
+                                        "type": "string",
+                                        "example": "Un super concert de jazz..."
+                                    },
+                                    "date": {
+                                        "description": "Date et heure de l'événement",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-12-25T20:00:00"
+                                    },
+                                    "location": {
+                                        "description": "Lieu de l'événement",
+                                        "type": "string",
+                                        "example": "Salle de Concert"
+                                    },
+                                    "latitude": {
+                                        "description": "Latitude GPS",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 48.8566
+                                    },
+                                    "longitude": {
+                                        "description": "Longitude GPS",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2.3522
+                                    },
+                                    "capacity": {
+                                        "description": "Nombre de places disponibles",
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "price": {
+                                        "description": "Prix du billet",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25.5
+                                    },
+                                    "category_id": {
+                                        "description": "ID de la catégorie",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "jazz",
+                                            "musique",
+                                            "live"
+                                        ]
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published"
+                                        ],
+                                        "example": "published"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Événement créé avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Événement créé avec succès"
+                                        },
+                                        "event": {
+                                            "$ref": "#/components/schemas/Event"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé - Seuls les organisateurs peuvent créer des événements"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/{id}": {
+            "get": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Détail d'un événement",
+                "description": "Récupère les détails complets d'un événement",
+                "operationId": "getEvent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Événement récupéré avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Event"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Modifier un événement",
+                "description": "Modifie un événement existant (réservé à l'organisateur)",
+                "operationId": "updateEvent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Concert Jazz Modifié"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Description modifiée..."
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "location": {
+                                        "type": "string"
+                                    },
+                                    "capacity": {
+                                        "type": "integer"
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published",
+                                            "cancelled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Événement modifié avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Événement modifié avec succès"
+                                        },
+                                        "event": {
+                                            "$ref": "#/components/schemas/Event"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé - Seul l'organisateur peut modifier l'événement"
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Supprimer un événement",
+                "description": "Supprime un événement (réservé à l'organisateur)",
+                "operationId": "deleteEvent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Événement supprimé avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Événement supprimé avec succès"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé - Seul l'organisateur peut supprimer l'événement"
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/search": {
+            "get": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Rechercher des événements",
+                "description": "Recherche avancée d'événements avec plusieurs critères",
+                "operationId": "searchEvents",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Terme de recherche",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "ID de la catégorie",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "min_price",
+                        "in": "query",
+                        "description": "Prix minimum",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "max_price",
+                        "in": "query",
+                        "description": "Prix maximum",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Résultats de recherche",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Event"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "query": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-events": {
+            "get": {
+                "tags": [
+                    "Événements"
+                ],
+                "summary": "Mes événements",
+                "description": "Récupère les événements créés par l'utilisateur connecté",
+                "operationId": "getMyEvents",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Type d'événements",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "created",
+                            "enum": [
+                                "created",
+                                "participating"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Événements récupérés avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "events": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Event"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/upload/image": {
+            "post": {
+                "tags": [
+                    "Fichiers"
+                ],
+                "summary": "Upload d'une image",
+                "description": "Upload et redimensionne une image pour un événement ou un profil",
+                "operationId": "uploadImage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "image"
+                                ],
+                                "properties": {
+                                    "image": {
+                                        "description": "Fichier image à uploader",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "type": {
+                                        "description": "Type d'image",
+                                        "type": "string",
+                                        "default": "event",
+                                        "enum": [
+                                            "event",
+                                            "profile",
+                                            "banner"
+                                        ]
+                                    },
+                                    "event_id": {
+                                        "description": "ID de l'événement (si type=event)",
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Image uploadée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Image uploadée avec succès"
+                                        },
+                                        "file": {
+                                            "properties": {
+                                                "filename": {
+                                                    "type": "string"
+                                                },
+                                                "path": {
+                                                    "type": "string"
+                                                },
+                                                "url": {
+                                                    "type": "string"
+                                                },
+                                                "size": {
+                                                    "type": "integer"
+                                                },
+                                                "mime_type": {
+                                                    "type": "string"
+                                                },
+                                                "dimensions": {
+                                                    "properties": {
+                                                        "width": {
+                                                            "type": "integer"
+                                                        },
+                                                        "height": {
+                                                            "type": "integer"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erreur de validation du fichier",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Le fichier n'est pas valide"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "413": {
+                        "description": "Fichier trop volumineux"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/files/{filename}": {
+            "delete": {
+                "tags": [
+                    "Fichiers"
+                ],
+                "summary": "Supprimer un fichier",
+                "description": "Supprime un fichier du serveur",
+                "operationId": "deleteFile",
+                "parameters": [
+                    {
+                        "name": "filename",
+                        "in": "path",
+                        "description": "Nom du fichier à supprimer",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Type de fichier",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "event",
+                                "profile",
+                                "banner"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier supprimé avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Fichier supprimé avec succès"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Fichier non trouvé"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/{id}/files": {
+            "get": {
+                "tags": [
+                    "Fichiers"
+                ],
+                "summary": "Liste des fichiers d'un événement",
+                "description": "Récupère la liste des fichiers associés à un événement",
+                "operationId": "getEventFiles",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des fichiers récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "files": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                }
+            }
+        },
+        "/events/{id}/participate": {
+            "post": {
+                "tags": [
+                    "Participations"
+                ],
+                "summary": "S'inscrire à un événement",
+                "description": "Inscrit l'utilisateur connecté à un événement spécifique",
+                "operationId": "participateToEvent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "notes": {
+                                        "description": "Notes optionnelles",
+                                        "type": "string",
+                                        "example": "J'aimerais une place près de la scène"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Inscription réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Inscription réussie à l'événement"
+                                        },
+                                        "participation": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "qr_code": {
+                                                    "type": "string"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Événement complet ou déjà inscrit",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Événement complet ou vous êtes déjà inscrit"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/{id}/cancel-participation": {
+            "delete": {
+                "tags": [
+                    "Participations"
+                ],
+                "summary": "Annuler une participation",
+                "description": "Annule la participation de l'utilisateur connecté à un événement",
+                "operationId": "cancelParticipation",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Participation annulée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Participation annulée avec succès"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Pas de participation à annuler",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Vous n\\'êtes pas inscrit à cet événement"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/{id}/checkin": {
+            "post": {
+                "tags": [
+                    "Participations"
+                ],
+                "summary": "Valider l'entrée d'un participant",
+                "description": "Valide l'entrée d'un participant via son QR code (réservé aux organisateurs)",
+                "operationId": "checkInParticipant",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "qr_code"
+                                ],
+                                "properties": {
+                                    "qr_code": {
+                                        "description": "Code QR du participant",
+                                        "type": "string",
+                                        "example": "ABC123XYZ"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Entrée validée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Entrée validée avec succès"
+                                        },
+                                        "participant": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "checked_in_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "QR code invalide ou déjà utilisé",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "QR code invalide ou déjà utilisé"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé - Seuls les organisateurs peuvent valider les entrées"
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/events/{id}/participants": {
+            "get": {
+                "tags": [
+                    "Participations"
+                ],
+                "summary": "Liste des participants",
+                "description": "Récupère la liste des participants à un événement (réservé aux organisateurs)",
+                "operationId": "getEventParticipants",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'événement",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Statut des participations",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "confirmed",
+                                "waiting",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "checked_in",
+                        "in": "query",
+                        "description": "Filtrer par statut de validation",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des participants récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "participants": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "checked_in_count": {
+                                            "type": "integer"
+                                        },
+                                        "waiting_count": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé - Seuls les organisateurs peuvent voir la liste des participants"
+                    },
+                    "404": {
+                        "description": "Événement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/my-participations": {
+            "get": {
+                "tags": [
+                    "Participations"
+                ],
+                "summary": "Mes participations",
+                "description": "Récupère la liste des participations de l'utilisateur connecté",
+                "operationId": "getMyParticipations",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Statut des participations",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "confirmed",
+                                "waiting",
+                                "cancelled"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Participations récupérées avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "participations": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Event": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Concert Jazz"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Un super concert de jazz..."
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-12-25T20:00:00"
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "Salle de Concert"
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 48.8566
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 2.3522
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 25.5
+                    },
+                    "image": {
+                        "type": "string",
+                        "example": "events/concert-jazz.jpg",
+                        "nullable": true
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "jazz",
+                            "musique",
+                            "live"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published",
+                            "cancelled"
+                        ],
+                        "example": "published"
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "organizer_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Jean Dupont"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "jean.dupont@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "0123456789",
+                        "nullable": true
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "participant",
+                            "organisateur",
+                            "administrateur"
+                        ],
+                        "example": "participant"
+                    },
+                    "avatar": {
+                        "type": "string",
+                        "example": "avatars/user1.jpg",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentification",
+            "description": "Endpoints pour l'inscription, connexion et gestion des utilisateurs"
+        },
+        {
+            "name": "Événements",
+            "description": "Endpoints pour la gestion des événements (CRUD)"
+        },
+        {
+            "name": "Fichiers",
+            "description": "Endpoints pour l'upload et la gestion des fichiers"
+        },
+        {
+            "name": "Participations",
+            "description": "Endpoints pour la gestion des participations aux événements"
+        }
+    ]
+}
