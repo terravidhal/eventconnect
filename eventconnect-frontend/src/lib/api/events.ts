@@ -15,7 +15,16 @@ export interface EventsFilters {
 export const eventsApi = {
   async list(filters: EventsFilters = {}) {
     const { data } = await api.get('/events', { params: filters })
-    return data as { data: Event[]; current_page?: number; last_page?: number; total?: number }
+    return data as { 
+      data: Event[]; 
+      meta: { 
+        current_page: number; 
+        last_page: number; 
+        total: number;
+        per_page: number;
+      };
+      links: any;
+    }
   },
 
   async get(id: number) {

@@ -5,7 +5,8 @@ import type { Event } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ParticipationDialog from '@/components/events/ParticipationDialog'
-import { Users, MapPin, Calendar, Clock } from 'lucide-react'
+import { Users, MapPin, Calendar, Clock, CalendarX } from 'lucide-react'
+import { getDefaultImage } from '@/lib/constants/images'
 
 export default function EventDetailPage() {
   const { id } = useParams()
@@ -22,6 +23,10 @@ export default function EventDetailPage() {
   if (isError || !data) return <p className="text-destructive">Événement introuvable.</p>
 
   const e = data as Event
+  
+  // Vérifier si l'événement est expiré
+  const isExpired = new Date(e.date) < new Date()
+  
   const imageUrl = e.image || ''
   const statusColor = e.status === 'publié' ? 'bg-green-100 text-green-700' : e.status === 'annulé' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'
 
@@ -31,6 +36,12 @@ export default function EventDetailPage() {
       <div className="rounded-lg overflow-hidden border">
         {imageUrl ? (
           <img src={imageUrl} alt={e.title} className="w-full h-64 object-cover" />
+        ) : e.category?.name ? (
+          <img 
+            src={getDefaultImage(e.category.name)} 
+            alt={`${e.category.name} - ${e.title}`}
+            className="w-full h-64 object-cover"
+          />
         ) : (
           <div className="w-full h-64 bg-gradient-to-r from-primary/30 via-primary/20 to-primary/10" />
         )}
@@ -40,6 +51,13 @@ export default function EventDetailPage() {
         <h2 className="text-2xl font-semibold flex items-center gap-3">
           {e.title}
           <span className={`text-xs px-2 py-1 rounded ${statusColor} capitalize`}>{e.status}</span>
+          {/* Badge d'événement expiré */}
+          {isExpired && (
+            <span className="text-xs px-2 py-1 rounded bg-red-500 text-white flex items-center gap-1">
+              <CalendarX className="h-3 w-3" />
+              Expiré
+            </span>
+          )}
         </h2>
         <div className="flex gap-2">
           <Button asChild variant="outline"><Link to="/events">Retour</Link></Button>
@@ -64,9 +82,14 @@ export default function EventDetailPage() {
               {e.participants_count || 0} participants inscrits
             </div>
           </div>
-          {e.is_full && (
+          {e.is_full && !isExpired && (
             <div className="mt-2 text-sm text-orange-600 font-medium">
               ⚠️ Événement complet - Liste d'attente disponible
+            </div>
+          )}
+          {isExpired && (
+            <div className="mt-2 text-sm text-red-600 font-medium">
+              ❌ Cet événement a déjà eu lieu
             </div>
           )}
         </CardContent>
@@ -79,7 +102,15 @@ export default function EventDetailPage() {
         <CardContent className="space-y-3 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Date:</span> {new Date(e.date).toLocaleString()}
+            <span className="text-muted-foreground">Date:</span> 
+            <span className={isExpired ? 'text-red-600 font-medium' : ''}>
+              {new Date(e.date).toLocaleString()}
+            </span>
+            {isExpired && (
+              <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 ml-2">
+                Événement passé
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -105,14 +136,15 @@ export default function EventDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Catégorie et organisateur */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Catégorie</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <div><span className="text-muted-foreground">Nom:</span> {e.category?.name || '-'}</div>
-            {e.category?.icon && <div><span className="text-muted-foreground">Icône:</span> {e.category.icon}</div>}
+          <CardContent className="flex items-center gap-2">
+            <span className="text-2xl">{e.category?.icon || '���'}</span>
+            <span className="font-medium">{e.category?.name || 'Non catégorisé'}</span>
           </CardContent>
         </Card>
 
@@ -120,21 +152,14 @@ export default function EventDetailPage() {
           <CardHeader>
             <CardTitle className="text-base">Organisateur</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <div><span className="text-muted-foreground">Nom:</span> {e.organizer?.name || '-'}</div>
-            {e.organizer?.email && <div><span className="text-muted-foreground">Email:</span> {e.organizer.email}</div>}
+          <CardContent>
+            <div className="text-sm space-y-1">
+              <div className="font-medium">{e.organizer?.name || 'Organisateur inconnu'}</div>
+              <div className="text-muted-foreground">{e.organizer?.email || 'Email non disponible'}</div>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Description</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground whitespace-pre-line">{e.description}</div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

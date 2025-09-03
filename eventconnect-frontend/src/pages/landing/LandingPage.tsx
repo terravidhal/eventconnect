@@ -39,12 +39,13 @@ import { useQuery } from '@tanstack/react-query'
 import { eventsApi } from '@/lib/api/events'
 import type { Event } from '@/types'
 import NavBar from '@/components/layout/NavBar'
+import { getDefaultImage } from '@/lib/constants/images'
 
 const CATEGORIES = [
-  { key: 'musique', label: 'Musique', icon: Music, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300' },
-  { key: 'sport', label: 'Sport', icon: Trophy, color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300' },
-  { key: 'culture', label: 'Culture', icon: Palette, color: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-300' },
-  { key: 'tech', label: 'Tech', icon: Lightbulb, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300' },
+  { key: 'musique', label: 'Musique', icon: Music, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300', defaultImage: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop&crop=center' },
+  { key: 'sport', label: 'Sport', icon: Trophy, color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300', defaultImage: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop&crop=center' },
+  { key: 'culture', label: 'Culture', icon: Palette, color: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-300', defaultImage: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800&h=600&fit=crop&crop=center' },
+  { key: 'tech', label: 'Tech', icon: Lightbulb, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300', defaultImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=600&fit=crop&crop=center' },
 ]
 
 const FEATURES = [
@@ -406,6 +407,8 @@ export default function LandingPage() {
               queryFn: () => eventsApi.list({ page: 1 }),
             })
 
+            // Utilise la fonction importée depuis les constantes partagées
+
             const popularItems = (Array.isArray(popular) ? popular : []) as Event[]
             const latestItems = Array.isArray((latest as any)?.data) ? (latest as any).data as Event[] : []
             const chosen = (popularItems.length ? popularItems : latestItems).slice(0, 3)
@@ -432,7 +435,23 @@ export default function LandingPage() {
                 <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                   {(chosen.length ? chosen : [1,2,3]).map((e: any, idx: number) => (
                     <Card key={chosen.length ? e.id : idx} className="group hover:shadow-2xl transition-all duration-500 border-0 shadow-lg overflow-hidden bg-gradient-to-br from-background to-muted/20 hover:scale-105">
-                      <div className="aspect-video bg-gradient-to-br from-primary/60 via-primary/40 to-foreground/30 relative overflow-hidden">
+                      <div className="aspect-video relative overflow-hidden">
+                        {/* Image de l'événement ou image par défaut selon la catégorie */}
+                        {chosen.length && e.image ? (
+                          <img 
+                            src={e.image} 
+                            alt={e.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : chosen.length && e.category?.name ? (
+                          <img 
+                            src={getDefaultImage(e.category.name)} 
+                            alt={`${e.category.name} - ${e.title}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/60 via-primary/40 to-foreground/30" />
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/40 transition-all duration-300"></div>
                         <div className="absolute top-4 right-4">
                           <div className="bg-background/90 backdrop-blur-sm text-foreground px-3 py-1 rounded-full text-xs font-medium">

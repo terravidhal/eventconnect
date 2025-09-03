@@ -76,7 +76,7 @@ class EventController extends Controller
     {
         $query = Event::with(['category', 'organizer', 'participations.user'])
             ->published()
-            ->upcoming();
+            ->where('date', '>', now()->subDays(7)); // Inclure les événements des 7 derniers jours
 
         // Filtre par catégorie
         if ($request->has('category')) {
