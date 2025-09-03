@@ -38,7 +38,7 @@ class UpdateEventRequest extends FormRequest
             'tags.*' => 'string|max:50',
             'status' => [
                 'sometimes',
-                Rule::in(['draft', 'published', 'cancelled'])
+                Rule::in(['draft', 'publié', 'cancelled'])
             ],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
@@ -75,7 +75,7 @@ class UpdateEventRequest extends FormRequest
             'tags.max' => 'Vous ne pouvez pas ajouter plus de 10 tags.',
             'tags.*.string' => 'Chaque tag doit être une chaîne de caractères.',
             'tags.*.max' => 'Chaque tag ne peut pas dépasser 50 caractères.',
-            'status.in' => 'Le statut doit être "draft", "published" ou "cancelled".',
+            'status.in' => 'Le statut doit être "draft", "publié" ou "cancelled".',
             'image.image' => 'Le fichier doit être une image.',
             'image.mimes' => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
             'image.max' => 'L\'image ne peut pas dépasser 2 Mo.',

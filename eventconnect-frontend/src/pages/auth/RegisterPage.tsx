@@ -46,7 +46,11 @@ export default function RegisterPage() {
       const { token, user } = await authApi.register(values)
       loginStore(token, user)
       toast.success("Compte créé")
-      navigate('/dashboard', { replace: true })
+      if ((user as any)?.role === 'participant') {
+        navigate('/events', { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Inscription échouée'
       toast.error(message)

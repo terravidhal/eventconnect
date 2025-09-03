@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '../store/auth-store'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
@@ -26,10 +27,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    
     if (error.response?.status === 401) {
       // Token expiré ou invalide
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+     // localStorage.removeItem('token')
+     // localStorage.removeItem('user')
+
+      // On appelle la fonction logout du store pour mettre à jour l'état
+      useAuthStore.getState().logout()
       window.location.href = '/auth/login'
     }
     

@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\Participation;
 use App\Notifications\ParticipationConfirmedNotification;
+use App\Notifications\ParticipationPromotedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -83,16 +85,9 @@ class ParticipationController extends Controller
         }
 
         // Vérifier que l'événement est publié
-        if ($event->status !== 'published') {
+        if ($event->status !== 'publié') {
             return response()->json([
                 'message' => 'Cet événement n\'est pas ouvert aux inscriptions'
-            ], 400);
-        }
-
-        // Vérifier que l'événement n'est pas complet
-        if ($event->isFull()) {
-            return response()->json([
-                'message' => 'Cet événement est complet'
             ], 400);
         }
 
@@ -107,11 +102,14 @@ class ParticipationController extends Controller
             ], 400);
         }
 
+        // Déterminer le statut selon la disponibilité
+        $status = $event->isFull() ? 'en_attente' : 'inscrit';
+
         // Créer la participation
         $participation = Participation::create([
             'user_id' => $user->id,
             'event_id' => $event->id,
-            'status' => 'confirmed',
+            'status' => $status,
             'qr_code' => $this->generateUniqueQRCode(),
             'notes' => $request->input('notes'),
         ]);
@@ -124,8 +122,12 @@ class ParticipationController extends Controller
             \Log::error('Erreur envoi notification participation: ' . $e->getMessage());
         }
 
+        $message = $status === 'inscrit' 
+            ? 'Inscription réussie à l\'événement'
+            : 'Vous avez été ajouté à la liste d\'attente';
+
         return response()->json([
-            'message' => 'Inscription réussie à l\'événement',
+            'message' => $message,
             'participation' => [
                 'id' => $participation->id,
                 'status' => $participation->status,
@@ -136,14 +138,14 @@ class ParticipationController extends Controller
     }
 
     /**
-     * Annulation de participation
+     * Annulation de participation avec promotion automatique de la liste d'attente
      * 
      * @OA\Delete(
      *     path="/events/{id}/cancel-participation",
      *     operationId="cancelParticipation",
      *     tags={"Participations"},
-     *     summary="Annuler une participation",
-     *     description="Annule la participation de l'utilisateur connecté à un événement",
+     *     summary="Annuler sa participation",
+     *     description="Annule la participation de l'utilisateur connecté à un événement et promeut automatiquement les personnes en liste d'attente",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -156,14 +158,15 @@ class ParticipationController extends Controller
      *         response=200,
      *         description="Participation annulée avec succès",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Participation annulée avec succès")
+     *             @OA\Property(property="message", type="string", example="Participation annulée avec succès"),
+     *             @OA\Property(property="promoted_count", type="integer", example=2, description="Nombre de personnes promues de la liste d'attente")
      *         )
      *     ),
      *     @OA\Response(
      *         response=400,
-     *         description="Pas de participation à annuler",
+     *         description="Participation non trouvée ou événement déjà passé",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Vous n\'êtes pas inscrit à cet événement")
+     *             @OA\Property(property="message", type="string", example="Participation non trouvée")
      *         )
      *     ),
      *     @OA\Response(
@@ -180,14 +183,14 @@ class ParticipationController extends Controller
     {
         $user = Auth::user();
 
-        // Trouver la participation
+        // Trouver la participation de l'utilisateur
         $participation = $event->participations()
             ->where('user_id', $user->id)
             ->first();
 
         if (!$participation) {
             return response()->json([
-                'message' => 'Vous n\'êtes pas inscrit à cet événement'
+                'message' => 'Participation non trouvée'
             ], 400);
         }
 
@@ -198,12 +201,64 @@ class ParticipationController extends Controller
             ], 400);
         }
 
-        // Supprimer la participation
-        $participation->delete();
+        // Utiliser une transaction pour s'assurer de la cohérence
+        return DB::transaction(function () use ($participation, $event) {
+            // Supprimer la participation
+            $participation->delete();
 
-        return response()->json([
-            'message' => 'Participation annulée avec succès'
-        ]);
+            // Promouvoir les personnes de la liste d'attente si nécessaire
+            $promotedCount = $this->promoteWaitingList($event);
+
+            return response()->json([
+                'message' => 'Participation annulée avec succès',
+                'promoted_count' => $promotedCount
+            ]);
+        });
+    }
+
+    /**
+     * Promouvoir les personnes de la liste d'attente vers les inscriptions confirmées
+     */
+    private function promoteWaitingList(Event $event): int
+    {
+        // Calculer le nombre de places disponibles
+        $confirmedCount = $event->participations()
+            ->where('status', 'inscrit')
+            ->count();
+        
+        $availableSpots = $event->capacity - $confirmedCount;
+
+        if ($availableSpots <= 0) {
+            return 0; // Aucune place disponible
+        }
+
+        // Récupérer les personnes en liste d'attente, triées par date d'inscription (plus récentes en premier)
+        $waitingParticipants = $event->participations()
+            ->where('status', 'en_attente')
+            ->with('user')
+            ->orderBy('created_at', 'asc') // Plus anciennes en premier pour être promues
+            ->limit($availableSpots)
+            ->get();
+
+        $promotedCount = 0;
+
+        foreach ($waitingParticipants as $waitingParticipation) {
+            // Promouvoir vers 'inscrit'
+            $waitingParticipation->update(['status' => 'inscrit']);
+
+            // Envoyer une notification de promotion
+            try {
+                $waitingParticipation->user->notify(
+                    new ParticipationPromotedNotification($event, $waitingParticipation)
+                );
+            } catch (\Exception $e) {
+                \Log::error('Erreur envoi notification promotion: ' . $e->getMessage());
+            }
+
+            $promotedCount++;
+        }
+
+        return $promotedCount;
     }
 
     /**
@@ -332,7 +387,7 @@ class ParticipationController extends Controller
      *         in="query",
      *         description="Statut des participations",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"confirmed","waiting","cancelled"})
+     *         @OA\Schema(type="string", enum={"inscrit","en_attente","annulé"})
      *     ),
      *     @OA\Parameter(
      *         name="checked_in",
@@ -391,7 +446,7 @@ class ParticipationController extends Controller
         $participants = $query->orderBy('created_at', 'asc')->get();
 
         $checkedInCount = $participants->where('checked_in', true)->count();
-        $waitingCount = $participants->where('status', 'waiting')->count();
+        $waitingCount = $participants->where('status', 'en_attente')->count();
 
         return response()->json([
             'participants' => $participants->map(function ($participation) {
@@ -427,16 +482,9 @@ class ParticipationController extends Controller
      *     summary="Mes participations",
      *     description="Récupère la liste des participations de l'utilisateur connecté",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="status",
-     *         in="query",
-     *         description="Statut des participations",
-     *         required=false,
-     *         @OA\Schema(type="string", enum={"confirmed","waiting","cancelled"})
-     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Participations récupérées avec succès",
+     *         description="Liste des participations récupérée avec succès",
      *         @OA\JsonContent(
      *             @OA\Property(property="participations", type="array", @OA\Items(type="object"))
      *         )
@@ -451,42 +499,48 @@ class ParticipationController extends Controller
     {
         $user = Auth::user();
 
-        $query = $user->participations()->with(['event.category']);
-
-        // Filtre par statut
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $participations = $query->orderBy('created_at', 'desc')->get();
+        $participations = $user->participations()
+            ->with(['event.category', 'event.organizer'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'participations' => $participations->map(function ($participation) {
                 return [
                     'id' => $participation->id,
-                    'event' => [
-                        'id' => $participation->event->id,
-                        'title' => $participation->event->title,
-                        'date' => $participation->event->date,
-                        'location' => $participation->event->location,
-                        'image' => $participation->event->image,
-                        'category' => $participation->event->category ? [
-                            'name' => $participation->event->category->name,
-                            'icon' => $participation->event->category->icon,
-                        ] : null,
-                    ],
                     'status' => $participation->status,
                     'checked_in' => $participation->checked_in,
                     'qr_code' => $participation->qr_code,
                     'notes' => $participation->notes,
                     'created_at' => $participation->created_at,
+                    'event' => [
+                        'id' => $participation->event->id,
+                        'title' => $participation->event->title,
+                        'description' => $participation->event->description,
+                        'date' => $participation->event->date,
+                        'location' => $participation->event->location,
+                        'capacity' => $participation->event->capacity,
+                        'price' => $participation->event->price,
+                        'image' => $participation->event->image,
+                        'status' => $participation->event->status,
+                        'category' => [
+                            'id' => $participation->event->category->id,
+                            'name' => $participation->event->category->name,
+                            'icon' => $participation->event->category->icon,
+                        ],
+                        'organizer' => [
+                            'id' => $participation->event->organizer->id,
+                            'name' => $participation->event->organizer->name,
+                            'email' => $participation->event->organizer->email,
+                        ],
+                    ],
                 ];
-            })
+            }),
         ]);
     }
 
     /**
-     * Génère un QR code unique
+     * Génère un code QR unique
      */
     private function generateUniqueQRCode(): string
     {
@@ -496,4 +550,4 @@ class ParticipationController extends Controller
 
         return $qrCode;
     }
-} 
+}

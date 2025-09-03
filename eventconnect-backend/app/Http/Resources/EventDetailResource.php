@@ -90,7 +90,7 @@ class EventDetailResource extends JsonResource
             
             'can_participate' => $this->when(auth()->check(), function () {
                 return auth()->id() !== $this->organizer_id && 
-                       $this->status === 'published' && 
+                       $this->status === 'publié' && 
                        !$this->isFull();
             }),
             

@@ -38,11 +38,13 @@ export const authApi = {
 
   async getUser() {
     const { data } = await api.get('/user')
-    return data as any
+    // Le backend retourne { user: {...} }
+    return data.user || data
   },
 
   async updateProfile(payload: UpdateProfilePayload) {
     const { data } = await api.put('/user', payload)
-    return data as any
+    // Le backend retourne { message: '...', user: {...} }
+    return data
   },
-} 
+}

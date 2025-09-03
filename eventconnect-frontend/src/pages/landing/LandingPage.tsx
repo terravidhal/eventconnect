@@ -38,6 +38,7 @@ import { ModeToggle } from '@/components/mode-toggle'
 import { useQuery } from '@tanstack/react-query'
 import { eventsApi } from '@/lib/api/events'
 import type { Event } from '@/types'
+import NavBar from '@/components/layout/NavBar'
 
 const CATEGORIES = [
   { key: 'musique', label: 'Musique', icon: Music, color: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300' },
@@ -182,90 +183,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 gap-4">
-            <div className="flex items-center">
-              <Link to="/" className="flex-shrink-0 flex items-center group">
-                <div className="relative">
-                  <Calendar className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-200" />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
-                </div>
-                <span className="ml-3 text-xl font-bold bg-gradient-to-r from-primary to-foreground/80 bg-clip-text text-transparent">
-                  EventConnect
-                </span>
-              </Link>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
-              <Link to="/" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
-                Accueil
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-              </Link>
-              <Link to="/events" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
-                Événements
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-              </Link>
-              <a href="#features" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
-                Fonctionnalités
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-              </a>
-              <a href="#faq" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
-                FAQ
-                <span className="absolute bottom-0 left-0 w-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
-              </a>
-              <div className="w-[280px]">
-                <SearchBar />
-              </div>
-              <ModeToggle />
-              <Button asChild className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-6 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
-                <Link to="/auth/register">
-                  Créer un compte
-                </Link>
-              </Button>
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center gap-3">
-              <ModeToggle />
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-2 transition-colors"
-              >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden animate-in slide-in-from-top-2 duration-200">
-              <div className="px-2 pt-2 pb-3 space-y-1 border-t border-border/50 bg-background/95 backdrop-blur-md">
-                <Link to="/" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">
-                  Accueil
-                </Link>
-                <Link to="/events" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">
-                  Événements
-                </Link>
-                <a href="#features" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">
-                  Fonctionnalités
-                </a>
-                <a href="#faq" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">
-                  FAQ
-                </a>
-                <div className="px-3 py-2">
-                  <SearchBar />
-                </div>
-                <Link to="/auth/register" className="block px-3 py-2 bg-primary text-primary-foreground rounded-md text-center font-medium">
-                  Créer un compte
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+      <NavBar />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen flex flex-col">

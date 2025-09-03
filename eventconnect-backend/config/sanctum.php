@@ -47,7 +47,8 @@ return [
     |
     */
 
-    'expiration' => null,
+   // 'expiration' => null,
+    'expiration' => 2880, // 02 jours en minutes
 
     /*
     |--------------------------------------------------------------------------

@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import SearchBar from '@/components/events/SearchBar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useAuthStore } from '@/lib/store/auth-store'
+import { useQuery as useAuthQuery } from '@tanstack/react-query'
+import { authApi } from '@/lib/api/auth'
+import { CheckCircle, Clock } from 'lucide-react'
 
 export default function EventsListPage() {
   const [params] = useSearchParams()
@@ -13,6 +17,18 @@ export default function EventsListPage() {
   const category = params.get('category') || undefined
   const page = Number(params.get('page') || '1')
   const perPage = Number(params.get('per_page') || '12')
+  const user = useAuthStore((state) => state.user)
+  const token = localStorage.getItem('token')
+
+  // Récupérer les données utilisateur si le token existe mais pas l'utilisateur
+  const { data: userData } = useAuthQuery({
+    queryKey: ['user'],
+    queryFn: authApi.getUser,
+    enabled: !!token && !user,
+    retry: false
+  })
+
+  const currentUser = user || userData
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['events', { category, page, perPage }],
@@ -26,8 +42,18 @@ export default function EventsListPage() {
   const lastPage = (data as any)?.last_page ?? (data as any)?.meta?.last_page ?? 1
   const currentParams = new URLSearchParams(params)
 
-  console.log("events", events);
-  
+  // Fonction pour vérifier si l'utilisateur est inscrit à un événement
+  const isUserParticipating = (event: Event) => {
+    if (!currentUser) return false
+    return event.participations?.some(p => p.user?.id === currentUser.id) || false
+  }
+
+  // Fonction pour obtenir le statut de participation
+  const getParticipationStatus = (event: Event) => {
+    if (!currentUser) return null
+    const participation = event.participations?.find(p => p.user?.id === currentUser.id)
+    return participation?.status || null
+  }
 
   return (
     <div className="space-y-6">
@@ -61,20 +87,50 @@ export default function EventsListPage() {
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {events.map((e) => (
-          <Card key={e.id} className="hover:shadow-sm transition">
-            <CardHeader>
-              <CardTitle className="text-base">{e.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-2">{e.description}</p>
-              <div className="text-sm mt-2">{e.location} • {new Date(e.date).toLocaleDateString()}</div>
-              <div className="mt-4">
-                <Button asChild size="sm"><Link to={`/events/${e.id}`}>Détails</Link></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {events.map((e) => {
+          const isParticipating = isUserParticipating(e)
+          const participationStatus = getParticipationStatus(e)
+          
+          return (
+            <Card key={e.id} className="hover:shadow-sm transition relative">
+              {/* Badge de participation */}
+              {isParticipating && (
+                <div className="absolute top-3 right-3 z-10">
+                  {participationStatus === 'inscrit' ? (
+                    <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Inscrit
+                    </div>
+                  ) : participationStatus === 'en_attente' ? (
+                    <div className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      En attente
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              
+              <CardHeader>
+                <CardTitle className="text-base">{e.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-2">{e.description}</p>
+                <div className="text-sm mt-2">{e.location} • {new Date(e.date).toLocaleDateString()}</div>
+                
+                {/* Informations sur les places */}
+                {e.available_spots !== undefined && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {e.available_spots} / {e.capacity} places disponibles
+                  </div>
+                )}
+                
+                <div className="mt-4">
+                  <Button asChild size="sm"><Link to={`/events/${e.id}`}>Détails</Link></Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {lastPage > 1 && (
@@ -102,4 +158,4 @@ export default function EventsListPage() {
       )}
     </div>
   )
-} 
+}

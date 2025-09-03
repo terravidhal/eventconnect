@@ -39,9 +39,19 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (userData: Partial<User>) => {
         const currentUser = get().user
         if (currentUser) {
+          const updatedUser = { ...currentUser, ...userData }
           set({ 
-            user: { ...currentUser, ...userData } 
+            user: updatedUser
           })
+          // Forcer la mise à jour du localStorage
+          localStorage.setItem('auth-storage', JSON.stringify({
+            state: {
+              user: updatedUser,
+              token: get().token,
+              isAuthenticated: get().isAuthenticated
+            },
+            version: 0
+          }))
         }
       },
     }),

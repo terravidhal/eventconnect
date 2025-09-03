@@ -34,7 +34,11 @@ export default function LoginPage() {
       const { token, user } = await authApi.login(values)
       loginStore(token, user)
       toast.success('Connexion réussie')
-      navigate('/dashboard', { replace: true })
+      if ((user as any)?.role === 'participant') {
+        navigate('/events', { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Identifiants invalides'
       toast.error(message)

@@ -9,6 +9,19 @@ export interface User {
   updated_at: string
 }
 
+export interface Participation {
+  id: number
+  event_id: number
+  user_id: number
+  status: 'inscrit' | 'en_attente' | 'annulé' | 'checked_in'
+  notes?: string
+  qr_code?: string
+  created_at: string
+  updated_at: string
+  event?: Event
+  user?: User
+}
+
 export interface Event {
   id: number
   title: string
@@ -29,25 +42,21 @@ export interface Event {
   can_edit?: boolean
   can_delete?: boolean
   can_participate?: boolean
+  // Nouvelles propriétés pour la gestion des places
+  participants_count?: number
+  available_spots?: number
+  is_full?: boolean
+  participation_rate?: number
+  is_participating?: boolean
+  participation_status?: 'inscrit' | 'en_attente' | 'annulé' | null
+  // Participations pour la liste des événements
+  participations?: Participation[]
 }
 
 export interface Category {
   id: number
   name: string
   icon: string
-}
-
-export interface Participation {
-  id: number
-  event_id: number
-  user_id: number
-  status: 'inscrit' | 'en_attente' | 'checked_in' | 'annulé'
-  notes?: string
-  qr_code?: string
-  created_at: string
-  updated_at: string
-  event?: Event
-  user?: User
 }
 
 export interface ApiResponse<T> {

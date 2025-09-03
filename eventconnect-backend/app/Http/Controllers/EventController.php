@@ -59,7 +59,7 @@ class EventController extends Controller
      *         in="query",
      *         description="Statut de l'événement",
      *         required=false,
-     *         @OA\Schema(type="string", enum={"draft","published","cancelled"})
+     *         @OA\Schema(type="string", enum={"draft","publié","cancelled"})
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -74,7 +74,7 @@ class EventController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Event::with(['category', 'organizer'])
+        $query = Event::with(['category', 'organizer', 'participations.user'])
             ->published()
             ->upcoming();
 
@@ -163,7 +163,7 @@ class EventController extends Controller
      *             @OA\Property(property="price", type="number", format="float", example=25.50, description="Prix du billet"),
      *             @OA\Property(property="category_id", type="integer", example=1, description="ID de la catégorie"),
      *             @OA\Property(property="tags", type="array", @OA\Items(type="string"), example={"jazz","musique","live"}),
-     *             @OA\Property(property="status", type="string", enum={"draft","published"}, example="published")
+     *             @OA\Property(property="status", type="string", enum={"draft","publié"}, example="publié")
      *         )
      *     ),
      *     @OA\Response(
@@ -192,7 +192,7 @@ class EventController extends Controller
     {
         $validated = $request->validated();
         $validated['organizer_id'] = Auth::id();
-        $validated['status'] = $validated['status'] ?? 'published';
+        $validated['status'] = $validated['status'] ?? 'publié';
 
         $event = Event::create($validated);
 
@@ -239,7 +239,7 @@ class EventController extends Controller
      *             @OA\Property(property="price", type="number"),
      *             @OA\Property(property="category_id", type="integer"),
      *             @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *             @OA\Property(property="status", type="string", enum={"draft","published","cancelled"})
+     *             @OA\Property(property="status", type="string", enum={"draft","publié","cancelled"})
      *         )
      *     ),
      *     @OA\Response(
@@ -406,7 +406,7 @@ class EventController extends Controller
             ], 400);
         }
 
-        $events = Event::with(['category', 'organizer'])
+        $events = Event::with(['category', 'organizer', 'participations.user'])
             ->published()
             ->where(function($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
@@ -702,7 +702,7 @@ class EventController extends Controller
     public function popular(Request $request): JsonResponse
     {
         $limit = $request->get('limit', 10);
-        $events = Event::with(['category', 'organizer'])
+        $events = Event::with(['category', 'organizer', 'participations.user'])
             ->published()
             ->upcoming()
             ->popular($limit)

@@ -47,6 +47,24 @@ class EventResource extends JsonResource
                 ];
             }),
             
+            // Participations (si chargées)
+            'participations' => $this->whenLoaded('participations', function () {
+                return $this->participations->map(function ($participation) {
+                    return [
+                        'id' => $participation->id,
+                        'status' => $participation->status,
+                        'checked_in' => $participation->checked_in,
+                        'created_at' => $participation->created_at,
+                        'user' => [
+                            'id' => $participation->user->id,
+                            'name' => $participation->user->name,
+                            'email' => $participation->user->email,
+                            'avatar' => $participation->user->avatar,
+                        ],
+                    ];
+                });
+            }),
+            
             // Métadonnées calculées
             'participants_count' => $this->when(isset($this->participants_count), $this->participants_count),
             'available_spots' => $this->when(isset($this->available_spots), $this->available_spots),
@@ -69,9 +87,22 @@ class EventResource extends JsonResource
             
             'can_participate' => $this->when(auth()->check(), function () {
                 return auth()->id() !== $this->organizer_id && 
-                       $this->status === 'published' && 
+                       $this->status === 'publié' && 
                        !$this->isFull();
+            }),
+            
+            'is_participating' => $this->when(auth()->check(), function () {
+                return $this->participations()
+                    ->where('user_id', auth()->id())
+                    ->exists();
+            }),
+            
+            'participation_status' => $this->when(auth()->check(), function () {
+                $participation = $this->participations()
+                    ->where('user_id', auth()->id())
+                    ->first();
+                return $participation ? $participation->status : null;
             }),
         ];
     }
-} 
+}
