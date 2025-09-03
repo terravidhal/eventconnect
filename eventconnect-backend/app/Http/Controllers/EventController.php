@@ -98,8 +98,9 @@ class EventController extends Controller
             $query->where('status', $request->status);
         }
 
+        $perPage = (int) ($request->get('per_page', 12));
         $events = $query->orderBy('date', 'asc')
-                       ->paginate(12);
+                       ->paginate($perPage);
 
         return EventResource::collection($events);
     }

@@ -49,21 +49,21 @@ const CATEGORIES = [
 const FEATURES = [
   { 
     title: 'Organisation simplifiée', 
-    desc: 'Créez et gérez vos événements en quelques clics avec notre interface intuitive et nos outils d\'automatisation avancés.',
+    desc: 'Créez et gérez vos événements en quelques clics avec notre interface intuitive et nos outils impressionnants.',
     icon: Calendar,
     color: 'text-blue-600 dark:text-blue-300',
     gradient: 'from-blue-500/10 to-blue-600/10'
   },
   { 
-    title: 'Découverte intelligente', 
-    desc: 'Trouvez des événements pertinents grâce à notre IA qui apprend vos préférences et votre géolocalisation.',
+    title: 'Découverte fluide', 
+    desc: 'Trouvez des événements pertinents grâce à notre recherche en fonction de vos préférences.',
     icon: MapPin,
     color: 'text-green-600 dark:text-green-300',
     gradient: 'from-green-500/10 to-green-600/10'
   },
   { 
     title: 'Participations fluides', 
-    desc: 'Inscrivez-vous instantanément et recevez toutes vos confirmations par email, SMS et notifications push.',
+    desc: 'Inscrivez-vous instantanément et recevez toutes vos confirmations par email, de facon automatique.',
     icon: Bell,
     color: 'text-purple-600 dark:text-purple-300',
     gradient: 'from-purple-500/10 to-purple-600/10'
@@ -81,16 +81,16 @@ const HOW_IT_WORKS = [
   { 
     step: '2', 
     title: 'Explorez et découvrez', 
-    desc: 'Parcourez par catégorie, localisation ou recommandations IA', 
+    desc: 'Parcourez par catégorie, localisation et plein d\'autres filtres', 
     icon: MapPin,
-    detail: 'Filtres avancés et recherche intelligente pour trouver l\'événement parfait'
+    detail: 'Filtres avancés et recherche rapide pour trouver l\'événement parfait'
   },
   { 
     step: '3', 
     title: 'Participez ou organisez', 
     desc: 'Rejoignez des événements ou créez les vôtres en quelques clics', 
     icon: Calendar,
-    detail: 'Gestion complète des inscriptions et communication automatisée'
+    detail: 'Gestion complète des inscriptions et communication fluide'
   }
 ]
 
@@ -187,7 +187,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
             <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center group">
+              <Link to="/" className="flex-shrink-0 flex items-center group">
                 <div className="relative">
                   <Calendar className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-200" />
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
@@ -195,11 +195,15 @@ export default function LandingPage() {
                 <span className="ml-3 text-xl font-bold bg-gradient-to-r from-primary to-foreground/80 bg-clip-text text-transparent">
                   EventConnect
                 </span>
-              </div>
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
+              <Link to="/" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
+                Accueil
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
+              </Link>
               <Link to="/events" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
                 Événements
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
@@ -210,7 +214,7 @@ export default function LandingPage() {
               </a>
               <a href="#faq" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
                 FAQ
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
+                <span className="absolute bottom-0 left-0 w-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
               </a>
               <div className="w-[280px]">
                 <SearchBar />
@@ -239,6 +243,9 @@ export default function LandingPage() {
           {isMenuOpen && (
             <div className="md:hidden animate-in slide-in-from-top-2 duration-200">
               <div className="px-2 pt-2 pb-3 space-y-1 border-t border-border/50 bg-background/95 backdrop-blur-md">
+                <Link to="/" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">
+                  Accueil
+                </Link>
                 <Link to="/events" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">
                   Événements
                 </Link>
@@ -261,12 +268,13 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-screen flex flex-col">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-muted/20"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)] dark:bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.05),transparent_50%)]"></div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32 flex-1 flex">
+         {/* <div className="text-center flex-1 flex flex-col justify-center">*/}
           <div className="text-center">
             {/* Hero Badge */}
             <div className="mb-8 inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 text-primary rounded-full text-sm font-medium backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-700">

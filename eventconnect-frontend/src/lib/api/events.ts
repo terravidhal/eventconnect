@@ -9,6 +9,7 @@ export interface EventsFilters {
   date_to?: string
   q?: string
   page?: number
+  per_page?: number
 }
 
 export const eventsApi = {
