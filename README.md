@@ -72,7 +72,7 @@ Pensez aussi à définir `FRONTEND_URL`/`FRONTEND_URL2` si vous changez les port
 
 ### 2) Frontend (React + Vite)
 
-1. `cd ../eventconnect-frontend`
+1. `cd eventconnect-frontend`
 2. Installer les dépendances: `pnpm install` ou `npm install`
 3. Configurer l’URL de l’API (si besoin):
    - Créer `.env` et définir `VITE_API_URL=http://localhost:8000/api`
