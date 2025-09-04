@@ -39,10 +39,15 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
   // Vérifier si l'événement est expiré
   const isExpired = new Date(event.date) < new Date()
   const isCancelled = event.status === 'annulé'
+  const isNonParticipantRole = !!currentUser && currentUser.role !== 'participant'
 
   const handleConfirm = async () => {
     if (!currentUser) {
       toast.error('Vous devez être connecté pour vous inscrire')
+      return
+    }
+    if (isNonParticipantRole) {
+      toast.error('Seuls les participants peuvent s\'inscrire aux événements')
       return
     }
 
@@ -136,6 +141,17 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
     )
   }
 
+  // Si rôle non participant: désactiver l'inscription
+  if (isNonParticipantRole) {
+    return (
+      <div className="flex items-center gap-3">
+        <Button disabled variant="outline" className="opacity-60 cursor-not-allowed w-full">
+          Réservé aux participants
+        </Button>
+      </div>
+    )
+  }
+
   // Si l'utilisateur est déjà inscrit - Design amélioré avec bouton de désinscription
   if (isParticipating) {
     const statusColor = participationStatus === 'inscrit' 
@@ -175,7 +191,7 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" disabled={isNonParticipantRole}>
             Liste d'attente
           </Button>
         </DialogTrigger>
@@ -216,7 +232,7 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full">
+        <Button className="w-full" disabled={isNonParticipantRole}>
           S'inscrire
         </Button>
       </DialogTrigger>

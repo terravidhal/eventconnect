@@ -77,6 +77,13 @@ class ParticipationController extends Controller
     {
         $user = Auth::user();
 
+        // Restreindre l'inscription aux utilisateurs avec le rôle 'participant'
+        if ($user && $user->role !== 'participant') {
+            return response()->json([
+                'message' => 'Seuls les participants peuvent s\'inscrire aux événements'
+            ], 403);
+        }
+
         // Vérifier que l'utilisateur n'est pas l'organisateur
         if ($event->organizer_id === $user->id) {
             return response()->json([

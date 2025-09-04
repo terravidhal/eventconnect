@@ -68,18 +68,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Card Participations - Visible pour tous */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Mes participations</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <div>Total: {partsCount}</div>
-            <Button asChild size="sm" variant="outline">
-              <Link to="/dashboard/participations">Voir</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Card Participations - Uniquement pour les participants */}
+        {role === 'participant' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Mes participations</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-2">
+              <div>Total: {partsCount}</div>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/dashboard/participations">Voir</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Card Événements - Seulement pour organisateurs et admin */}
         {(role === 'organisateur' || role === 'admin') && (

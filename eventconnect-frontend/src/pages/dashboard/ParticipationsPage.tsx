@@ -1,13 +1,23 @@
 import { useQuery } from '@tanstack/react-query'
 import { participationsApi } from '@/lib/api/participations'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
+import { useAuthStore } from '@/lib/store/auth-store'
 
 export default function ParticipationsPage() {
+  const user = useAuthStore((s) => s.user)
+  const role = user?.role || 'participant'
+
+  // Rediriger les non-participants
+  if (role !== 'participant') {
+    return <Navigate to="/dashboard" replace />
+  }
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ['my-participations'],
     queryFn: () => participationsApi.myParticipations(),
+    enabled: role === 'participant',
   })
 
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>

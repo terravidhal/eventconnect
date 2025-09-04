@@ -1,5 +1,5 @@
 import React from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver, type SubmitHandler } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -27,6 +27,8 @@ const schema = z.object({
   image: z.string().url('URL invalide').optional().or(z.literal('')),
 })
 
+type FormValues = z.infer<typeof schema>
+
 export default function EditEventPage() {
   const navigate = useNavigate()
   const { id } = useParams()
@@ -48,18 +50,18 @@ export default function EditEventPage() {
   const categories = (filtersData?.categories || []) as Category[]
 
   // Préparer les valeurs par défaut basées sur les données
-  const getDefaultValues = () => {
+  const getDefaultValues = (): FormValues => {
     if (data) {
       return {
         title: data.title || '',
         description: data.description || '',
         date: data.date?.slice(0, 16) || '',
         location: data.location || '',
-        capacity: data.capacity || 10,
-        price: data.price ?? 0,
-        category_id: (data as any).category?.id || 1,
+        capacity: Number(data.capacity ?? 10),
+        price: data.price !== undefined && data.price !== null ? Number(data.price) : 0,
+        category_id: Number((data as any).category?.id ?? 1),
         tags: Array.isArray((data as any).tags) ? (data as any).tags.join(', ') : '',
-        status: data.status || 'brouillon',
+        status: (data.status as FormValues['status']) || 'brouillon',
         image: data.image || '',
       }
     }
@@ -69,8 +71,8 @@ export default function EditEventPage() {
     }
   }
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema) as unknown as Resolver<FormValues>,
     defaultValues: getDefaultValues()
   })
 
@@ -86,7 +88,7 @@ export default function EditEventPage() {
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>
   if (isError || !data) return <p className="text-destructive">Événement introuvable.</p>
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
       const payload = {
         ...values,

@@ -21,13 +21,18 @@ export default function ManageEventsPage() {
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>
   if (isError) return <p className="text-destructive">Erreur de chargement.</p>
 
-  // Extraire le tableau d'événements de la réponse API
-  const items = (data?.events || []) as Event[]
+  // Extraire le tableau d'événements de la réponse API (garde contre les formes différentes)
+  const items = Array.isArray(data)
+    ? (data as Event[])
+    : (Array.isArray((data as any)?.events) ? ((data as any).events as Event[]) : [])
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Mes événements</h2>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm"><Link to="/events">Retour aux événements</Link></Button>
+          <h2 className="text-2xl font-semibold">Mes événements</h2>
+        </div>
         <Button asChild><Link to="/dashboard/events/create">Nouveau</Link></Button>
       </div>
 
