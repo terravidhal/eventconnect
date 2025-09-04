@@ -128,14 +128,14 @@ flowchart TD
   D -->|Non| F[Liste d'attente]
   E --> G[Dashboard participant: Mes participations et notifications envoie d'email]
   F --> G
-  G -->|Se désinscrire| H[Place libérée -> Promotion auto]
+  G -->|Se désinscrire| H[Promotion auto après libération de place]
 ```
 
 ### Organisateur
 
 ```mermaid
 flowchart TD
-  A[Connexion (rôle organisateur)] --> B[Dashboard: Mes événements]
+  A[Connexion - role organisateur] --> B[Dashboard: Mes événements]
   B --> C[Créer un événement]
   B --> D[Éditer un événement]
   B --> E[Supprimer un événement]
@@ -143,8 +143,7 @@ flowchart TD
   F --> F1[Participants confirmés]
   F --> F2[Liste d'attente]
   F --> G[Voir taux de remplissage]
-  D --> H[Changer statut -> Annulé]
-  H --> I[Envoyer notifications d'annulation]
+  D --> H[Changer statut vers Annulé]
 ```
 
 ### Administrateur
