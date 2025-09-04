@@ -9,6 +9,11 @@ import ManageEventsPage from '@/pages/dashboard/events/ManageEventsPage'
 import ParticipationsPage from '@/pages/dashboard/ParticipationsPage'
 import CheckInPage from '@/pages/dashboard/events/CheckInPage'
 import NotificationsPage from '@/pages/dashboard/NotificationsPage'
+import AdminDashboardPage from '@/pages/dashboard/admin/AdminDashboardPage'
+import ModerateEventsPage from '@/pages/dashboard/admin/ModerateEventsPage'
+import UsersAdminPage from '@/pages/dashboard/admin/UsersAdminPage'
+import GlobalStatsPage from '@/pages/dashboard/admin/GlobalStatsPage'
+import MaintenancePage from '@/pages/dashboard/admin/MaintenancePage'
 
 export default function DashboardRoutes() {
   const { RoleProtectedRoute } = useProtectedRoute()
@@ -51,6 +56,41 @@ export default function DashboardRoutes() {
             </RoleProtectedRoute>
           }
         />
+
+        {/* Admin routes */}
+        <Route
+          path="admin"
+          element={
+            <RoleProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboardPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/events"
+          element={
+            <RoleProtectedRoute allowedRoles={["admin"]}>
+              <ModerateEventsPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/users"
+          element={
+            <RoleProtectedRoute allowedRoles={["admin"]}>
+              <UsersAdminPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/stats"
+          element={
+            <RoleProtectedRoute allowedRoles={["admin"]}>
+              <GlobalStatsPage />
+            </RoleProtectedRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

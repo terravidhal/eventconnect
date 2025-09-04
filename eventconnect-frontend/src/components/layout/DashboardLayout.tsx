@@ -22,6 +22,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {(role === 'organisateur' || role === 'admin') && (
               <NavLink to="/dashboard/events" className={({ isActive }) => (isActive ? 'block px-3 py-2 rounded bg-muted text-foreground' : 'block px-3 py-2 rounded')}>Événements</NavLink>
             )}
+            {role === 'admin' && (
+              <>
+                <div className="px-3 pt-3 text-xs uppercase text-muted-foreground">Administration</div>
+                <NavLink to="/dashboard/admin" className={({ isActive }) => (isActive ? 'block px-3 py-2 rounded bg-muted text-foreground' : 'block px-3 py-2 rounded')}>Vue d'ensemble</NavLink>
+                <NavLink to="/dashboard/admin/events" className={({ isActive }) => (isActive ? 'block px-3 py-2 rounded bg-muted text-foreground' : 'block px-3 py-2 rounded')}>Modération des événements</NavLink>
+                <NavLink to="/dashboard/admin/users" className={({ isActive }) => (isActive ? 'block px-3 py-2 rounded bg-muted text-foreground' : 'block px-3 py-2 rounded')}>Gestion des utilisateurs</NavLink>
+                <NavLink to="/dashboard/admin/stats" className={({ isActive }) => (isActive ? 'block px-3 py-2 rounded bg-muted text-foreground' : 'block px-3 py-2 rounded')}>Statistiques globales</NavLink>
+              </>
+            )}
           </nav>
         </aside>
         <main className="flex-1 p-4">

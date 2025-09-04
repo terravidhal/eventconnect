@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ParticipationController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +25,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Routes protégées (avec authentification)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
+    
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user', [AuthController::class, 'update']);
     
@@ -43,6 +44,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload/image', [FileController::class, 'uploadImage']);
     Route::delete('/files/{filename}', [FileController::class, 'deleteFile']);
     Route::get('/events/{event}/files', [FileController::class, 'getEventFiles']);
+
+    // Routes d'administration (seulement admin - contrôlées en contrôleur)
+    Route::get('/users', [AdminController::class, 'users']);
+    Route::get('/admin/stats', [AdminController::class, 'stats']);
+    Route::get('/admin/stats/timeseries', [AdminController::class, 'statsTimeseries']);
 });
 
 // Routes publiques des événements (lecture seule)

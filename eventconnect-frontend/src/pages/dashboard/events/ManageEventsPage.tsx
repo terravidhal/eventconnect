@@ -3,6 +3,9 @@ import { eventsApi } from '@/lib/api/events'
 import type { Event } from '@/types'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useState } from 'react'
+import { participationsApi } from '@/lib/api/participations'
 
 export default function ManageEventsPage() {
   const qc = useQueryClient()
@@ -18,6 +21,14 @@ export default function ManageEventsPage() {
     }
   })
 
+  const [participantsEvent, setParticipantsEvent] = useState<Event | null>(null)
+
+  const { data: participantsData, isLoading: loadingParticipants } = useQuery({
+    queryKey: ['event-participants', participantsEvent?.id],
+    queryFn: () => participationsApi.participants(participantsEvent!.id),
+    enabled: !!participantsEvent?.id,
+  })
+
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>
   if (isError) return <p className="text-destructive">Erreur de chargement.</p>
 
@@ -25,6 +36,17 @@ export default function ManageEventsPage() {
   const items = Array.isArray(data)
     ? (data as Event[])
     : (Array.isArray((data as any)?.events) ? ((data as any).events as Event[]) : [])
+
+  const confirmed = Array.isArray(participantsData?.participants)
+    ? participantsData.participants.filter((p: any) => p.status === 'inscrit')
+    : []
+  const waiting = Array.isArray(participantsData?.participants)
+    ? participantsData.participants.filter((p: any) => p.status === 'en_attente')
+    : []
+
+  const fillRate = participantsEvent && participantsEvent.capacity
+    ? Math.round(((confirmed.length || 0) / participantsEvent.capacity) * 100)
+    : 0
 
   return (
     <div className="space-y-4">
@@ -60,8 +82,10 @@ export default function ManageEventsPage() {
                   <td className="p-2">{new Date(e.date).toLocaleString()}</td>
                   <td className="p-2">{e.location}</td>
                   <td className="p-2">{e.status}</td>
-                  <td className="p-2 flex gap-2">
+                  <td className="p-2 flex gap-2 flex-wrap">
                     <Button asChild size="sm" variant="outline"><Link to={`/dashboard/events/${e.id}/edit`}>Éditer</Link></Button>
+                    <Button asChild size="sm" variant="outline"><Link to={`/events/${e.id}`}>Voir</Link></Button>
+                    <Button size="sm" variant="outline" onClick={() => setParticipantsEvent(e)}>Participants</Button>
                     <Button size="sm" variant="destructive" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(e.id)}>
                       {removeMutation.isPending ? 'Suppression...' : 'Supprimer'}
                     </Button>
@@ -72,6 +96,52 @@ export default function ManageEventsPage() {
           </table>
         </div>
       )}
+
+      <Dialog open={!!participantsEvent} onOpenChange={(open) => !open && setParticipantsEvent(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Participants — {participantsEvent?.title}</DialogTitle>
+          </DialogHeader>
+          {loadingParticipants ? (
+            <p className="text-muted-foreground">Chargement...</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-sm">
+                <div><span className="text-muted-foreground">Capacité:</span> {participantsEvent?.capacity}</div>
+                <div><span className="text-muted-foreground">Confirmés:</span> {confirmed.length}</div>
+                <div><span className="text-muted-foreground">Liste d'attente:</span> {waiting.length}</div>
+                <div><span className="text-muted-foreground">Taux de remplissage:</span> {fillRate}%</div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Participants confirmés</h4>
+                  {confirmed.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucun</p>
+                  ) : (
+                    <ul className="text-sm list-disc pl-5">
+                      {confirmed.map((p: any) => (
+                        <li key={p.id}>{p.user?.name || p.user_id} — inscrit</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Liste d'attente</h4>
+                  {waiting.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucun</p>
+                  ) : (
+                    <ul className="text-sm list-disc pl-5">
+                      {waiting.map((p: any) => (
+                        <li key={p.id}>{p.user?.name || p.user_id} — en attente</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
