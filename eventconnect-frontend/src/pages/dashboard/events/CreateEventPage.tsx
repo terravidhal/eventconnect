@@ -3,12 +3,15 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import { eventsApi } from '@/lib/api/events'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
+import { ArrowLeft } from 'lucide-react'
+import type { Category } from '@/types'
 
 const schema = z.object({
   title: z.string().min(3, 'Au moins 3 caractères'),
@@ -20,10 +23,20 @@ const schema = z.object({
   category_id: z.coerce.number().int().positive('Catégorie requise'),
   tags: z.string().optional(),
   status: z.enum(['brouillon', 'publié', 'annulé']).default('brouillon'),
+  image: z.string().url('URL invalide').optional().or(z.literal('')),
 })
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  
+  // Récupérer les catégories
+  const { data: filtersData, isLoading: categoriesLoading } = useQuery({
+    queryKey: ['available-filters'],
+    queryFn: () => eventsApi.availableFilters(),
+  })
+  
+  const categories = (filtersData?.categories || []) as Category[]
+  
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -36,6 +49,7 @@ export default function CreateEventPage() {
       category_id: 1,
       tags: '',
       status: 'brouillon',
+      image: '',
     },
   })
 
@@ -45,6 +59,12 @@ export default function CreateEventPage() {
         ...values,
         tags: values.tags ? values.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       }
+      
+      // Supprimer le champ image s'il est vide
+      if (!payload.image) {
+        delete (payload as any).image
+      }
+      
       await eventsApi.create(payload as any)
       toast.success('Événement créé')
       navigate('/dashboard/events', { replace: true })
@@ -56,7 +76,15 @@ export default function CreateEventPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Créer un événement</h2>
+      {/* Bouton retour */}
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/events')} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Retour
+        </Button>
+        <h2 className="text-2xl font-semibold">Créer un événement</h2>
+      </div>
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 max-w-2xl">
           <FormField control={form.control} name="title" render={({ field }) => (
@@ -72,6 +100,22 @@ export default function CreateEventPage() {
               <FormLabel>Description</FormLabel>
               <FormControl><Textarea rows={4} placeholder="Décrivez l'événement" {...field} /></FormControl>
               <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="image" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image de l'événement (URL)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="https://example.com/event-image.jpg" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground">
+                Entrez l'URL d'une image pour illustrer votre événement (optionnel)
+              </p>
             </FormItem>
           )} />
 
@@ -110,8 +154,24 @@ export default function CreateEventPage() {
 
             <FormField control={form.control} name="category_id" render={({ field }) => (
               <FormItem>
-                <FormLabel>Catégorie (ID)</FormLabel>
-                <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                <FormLabel>Catégorie</FormLabel>
+                <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={categoriesLoading ? "Chargement..." : "Choisir une catégorie"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={String(category.id)}>
+                        <div className="flex items-center gap-2">
+                          <span>{category.icon}</span>
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )} />
@@ -146,10 +206,10 @@ export default function CreateEventPage() {
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? 'Création...' : 'Créer'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>Annuler</Button>
+            <Button type="button" variant="outline" onClick={() => navigate('/dashboard/events')}>Annuler</Button>
           </div>
         </form>
       </Form>
     </div>
   )
-} 
+}

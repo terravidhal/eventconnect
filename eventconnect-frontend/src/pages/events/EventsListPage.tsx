@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import SearchBar from '@/components/events/SearchBar'
-import { CheckCircle, Clock, CalendarX, Calendar, MapPin } from 'lucide-react'
+import { CheckCircle, Clock, CalendarX, Calendar, MapPin, XCircle } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { useQuery as useUserQuery } from '@tanstack/react-query'
 import { authApi } from '@/lib/api/auth'
@@ -29,8 +29,9 @@ export default function EventsListPage() {
     queryFn: () => eventsApi.list({ ...currentParams, per_page: perPage }),
   })
   
-
   
+
+
 
 
   // Récupérer l'utilisateur connecté pour vérifier les participations
@@ -104,16 +105,17 @@ export default function EventsListPage() {
           const isParticipating = isUserParticipating(e)
           const participationStatus = getParticipationStatus(e)
           const isExpired = new Date(e.date) < new Date()
+          const isCancelled = e.status === 'annulé'
           
           // Debug temporaire pour voir la structure des tags
-          console.log('=== DEBUG TAGS ===');
+        /* console.log('=== DEBUG TAGS ===');
           console.log('Event ID:', e.id);
           console.log('Event title:', e.title);
           console.log('Tags:', e.tags);
           console.log('Tags type:', typeof e.tags);
           console.log('Is Array:', Array.isArray(e.tags));
           console.log('Tags length:', e.tags?.length);
-          console.log('Tags filtered:', e.tags && Array.isArray(e.tags) ? e.tags.filter(tag => tag && typeof tag === 'string') : 'N/A');
+          console.log('Tags filtered:', e.tags && Array.isArray(e.tags) ? e.tags.filter(tag => tag && typeof tag === 'string') : 'N/A');*/
           
 
           
@@ -156,8 +158,18 @@ export default function EventsListPage() {
                   </div>
                 )}
                 
+                {/* Badge d'événement annulé */}
+                {isCancelled && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <div className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                      <XCircle className="h-3 w-3" />
+                      Annulé
+                    </div>
+                  </div>
+                )}
+                
                 {/* Badge d'événement expiré */}
-                {isExpired && (
+                {isExpired && !isCancelled && (
                   <div className="absolute top-3 left-3 z-10">
                     <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                       <CalendarX className="h-3 w-3" />
@@ -209,9 +221,9 @@ export default function EventsListPage() {
                 )}
                 
                 <div className="mt-4">
-                  <Button asChild size="sm" disabled={isExpired}>
+                  <Button asChild size="sm" disabled={isExpired || isCancelled}>
                     <Link to={`/events/${e.id}`}>
-                      {isExpired ? 'Événement passé' : 'Détails'}
+                      {isCancelled ? 'Événement annulé' : isExpired ? 'Événement passé' : 'Détails'}
                     </Link>
                   </Button>
                 </div>

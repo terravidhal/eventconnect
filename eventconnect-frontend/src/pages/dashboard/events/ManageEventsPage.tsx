@@ -21,7 +21,8 @@ export default function ManageEventsPage() {
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>
   if (isError) return <p className="text-destructive">Erreur de chargement.</p>
 
-  const items = (data || []) as Event[]
+  // Extraire le tableau d'événements de la réponse API
+  const items = (data?.events || []) as Event[]
 
   return (
     <div className="space-y-4">
@@ -30,35 +31,42 @@ export default function ManageEventsPage() {
         <Button asChild><Link to="/dashboard/events/create">Nouveau</Link></Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="text-left text-muted-foreground">
-            <tr>
-              <th className="p-2">Titre</th>
-              <th className="p-2">Date</th>
-              <th className="p-2">Lieu</th>
-              <th className="p-2">Statut</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((e) => (
-              <tr key={e.id} className="border-t">
-                <td className="p-2">{e.title}</td>
-                <td className="p-2">{new Date(e.date).toLocaleString()}</td>
-                <td className="p-2">{e.location}</td>
-                <td className="p-2">{e.status}</td>
-                <td className="p-2 flex gap-2">
-                  <Button asChild size="sm" variant="outline"><Link to={`/dashboard/events/${e.id}/edit`}>Éditer</Link></Button>
-                  <Button size="sm" variant="destructive" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(e.id)}>
-                    {removeMutation.isPending ? 'Suppression...' : 'Supprimer'}
-                  </Button>
-                </td>
+      {items.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground mb-4">Vous n'avez créé aucun événement pour le moment.</p>
+          <Button asChild><Link to="/dashboard/events/create">Créer votre premier événement</Link></Button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="text-left text-muted-foreground">
+              <tr>
+                <th className="p-2">Titre</th>
+                <th className="p-2">Date</th>
+                <th className="p-2">Lieu</th>
+                <th className="p-2">Statut</th>
+                <th className="p-2">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {items.map((e) => (
+                <tr key={e.id} className="border-t">
+                  <td className="p-2">{e.title}</td>
+                  <td className="p-2">{new Date(e.date).toLocaleString()}</td>
+                  <td className="p-2">{e.location}</td>
+                  <td className="p-2">{e.status}</td>
+                  <td className="p-2 flex gap-2">
+                    <Button asChild size="sm" variant="outline"><Link to={`/dashboard/events/${e.id}/edit`}>Éditer</Link></Button>
+                    <Button size="sm" variant="destructive" disabled={removeMutation.isPending} onClick={() => removeMutation.mutate(e.id)}>
+                      {removeMutation.isPending ? 'Suppression...' : 'Supprimer'}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
-} 
+}

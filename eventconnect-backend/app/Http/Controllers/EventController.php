@@ -10,6 +10,7 @@ use App\Models\Event;
 use App\Services\SearchService;
 use App\Models\Category;
 use App\Notifications\EventCreatedNotification;
+use App\Notifications\EventCancelledNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -75,7 +76,7 @@ class EventController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Event::with(['category', 'organizer', 'participations.user'])
-            ->published()
+            ->whereIn("status", ["publié", "annulé"])
             ->where('date', '>', now()->subDays(7)); // Inclure les événements des 7 derniers jours
 
         // Filtre par catégorie
@@ -153,17 +154,18 @@ class EventController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"title","description","date","location","capacity","category_id"},
-     *             @OA\Property(property="title", type="string", example="Concert Jazz", description="Titre de l'événement"),
-     *             @OA\Property(property="description", type="string", example="Un super concert de jazz...", description="Description détaillée"),
-     *             @OA\Property(property="date", type="string", format="date-time", example="2025-12-25T20:00:00", description="Date et heure de l'événement"),
-     *             @OA\Property(property="location", type="string", example="Salle de Concert", description="Lieu de l'événement"),
-     *             @OA\Property(property="latitude", type="number", format="float", example=48.8566, description="Latitude GPS"),
-     *             @OA\Property(property="longitude", type="number", format="float", example=2.3522, description="Longitude GPS"),
-     *             @OA\Property(property="capacity", type="integer", example=100, description="Nombre de places disponibles"),
-     *             @OA\Property(property="price", type="number", format="float", example=25.50, description="Prix du billet"),
-     *             @OA\Property(property="category_id", type="integer", example=1, description="ID de la catégorie"),
-     *             @OA\Property(property="tags", type="array", @OA\Items(type="string"), example={"jazz","musique","live"}),
-     *             @OA\Property(property="status", type="string", enum={"draft","publié"}, example="publié")
+     *             @OA\Property(property="title", type="string", example="Concert de Jazz"),
+     *             @OA\Property(property="description", type="string", example="Un magnifique concert de jazz en plein air"),
+     *             @OA\Property(property="date", type="string", format="date-time", example="2024-12-25T20:00:00"),
+     *             @OA\Property(property="location", type="string", example="Parc de la Villette, Paris"),
+     *             @OA\Property(property="latitude", type="number", format="float", example=48.8566),
+     *             @OA\Property(property="longitude", type="number", format="float", example=2.3522),
+     *             @OA\Property(property="capacity", type="integer", example=100),
+     *             @OA\Property(property="price", type="number", format="float", example=25.00),
+     *             @OA\Property(property="category_id", type="integer", example=1),
+     *             @OA\Property(property="tags", type="array", @OA\Items(type="string"), example={"jazz", "musique", "concert"}),
+     *             @OA\Property(property="status", type="string", enum={"brouillon","publié"}, example="publié"),
+     *             @OA\Property(property="image", type="string", format="url", example="https://example.com/image.jpg")
      *         )
      *     ),
      *     @OA\Response(
@@ -192,17 +194,15 @@ class EventController extends Controller
     {
         $validated = $request->validated();
         $validated['organizer_id'] = Auth::id();
-        $validated['status'] = $validated['status'] ?? 'publié';
-
+        
         $event = Event::create($validated);
-
-        // Envoyer la notification de création d'événement
+        
+        // Envoyer une notification à l'organisateur
         try {
-            $user = Auth::user();
-            $user->notify(new EventCreatedNotification($event));
+            Auth::user()->notify(new EventCreatedNotification($event));
         } catch (\Exception $e) {
             // Log l'erreur mais ne pas faire échouer la création
-            \Log::error('Erreur envoi notification: ' . $e->getMessage());
+            \Log::error('Erreur envoi notification création événement: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -229,17 +229,20 @@ class EventController extends Controller
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\RequestBody(
-     *         required=false,
+     *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="title", type="string", example="Concert Jazz Modifié"),
-     *             @OA\Property(property="description", type="string", example="Description modifiée..."),
-     *             @OA\Property(property="date", type="string", format="date-time"),
-     *             @OA\Property(property="location", type="string"),
-     *             @OA\Property(property="capacity", type="integer"),
-     *             @OA\Property(property="price", type="number"),
-     *             @OA\Property(property="category_id", type="integer"),
-     *             @OA\Property(property="tags", type="array", @OA\Items(type="string")),
-     *             @OA\Property(property="status", type="string", enum={"draft","publié","cancelled"})
+     *             @OA\Property(property="title", type="string", example="Concert de Jazz - Édition Spéciale"),
+     *             @OA\Property(property="description", type="string", example="Un magnifique concert de jazz en plein air avec invités spéciaux"),
+     *             @OA\Property(property="date", type="string", format="date-time", example="2024-12-25T20:00:00"),
+     *             @OA\Property(property="location", type="string", example="Parc de la Villette, Paris"),
+     *             @OA\Property(property="latitude", type="number", format="float", example=48.8566),
+     *             @OA\Property(property="longitude", type="number", format="float", example=2.3522),
+     *             @OA\Property(property="capacity", type="integer", example=150),
+     *             @OA\Property(property="price", type="number", format="float", example=30.00),
+     *             @OA\Property(property="category_id", type="integer", example=1),
+     *             @OA\Property(property="tags", type="array", @OA\Items(type="string"), example={"jazz", "musique", "concert", "spécial"}),
+     *             @OA\Property(property="status", type="string", enum={"brouillon","publié","annulé"}, example="publié"),
+     *             @OA\Property(property="image", type="string", format="url", example="https://example.com/image.jpg")
      *         )
      *     ),
      *     @OA\Response(
@@ -267,12 +270,44 @@ class EventController extends Controller
     public function update(UpdateEventRequest $request, Event $event): JsonResponse
     {
         $validated = $request->validated();
+        
+        // Vérifier si l'événement passe au statut "annulé"
+        $wasCancelled = $event->status === 'annulé';
+        $isBeingCancelled = isset($validated['status']) && $validated['status'] === 'annulé';
+        
         $event->update($validated);
+        
+        // Si l'événement vient d'être annulé, notifier tous les participants
+        if (!$wasCancelled && $isBeingCancelled) {
+            $this->notifyParticipantsOfCancellation($event);
+        }
 
         return response()->json([
             'message' => 'Événement modifié avec succès',
             'event' => new EventResource($event->load(['category', 'organizer']))
         ]);
+    }
+
+    /**
+     * Notifier tous les participants d'un événement annulé
+     */
+    private function notifyParticipantsOfCancellation(Event $event): void
+    {
+        try {
+            // Charger les participations avec les utilisateurs
+            $event->load(['participations.user']);
+            
+            // Notifier tous les participants inscrits
+            foreach ($event->participations as $participation) {
+                if ($participation->user && in_array($participation->status, ['inscrit', 'en_attente'])) {
+                    $participation->user->notify(new EventCancelledNotification($event));
+                }
+            }
+            
+            \Log::info("Notifications d'annulation envoyées pour l'événement {$event->id} à " . $event->participations->count() . " participants");
+        } catch (\Exception $e) {
+            \Log::error('Erreur envoi notifications annulation événement: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -316,15 +351,10 @@ class EventController extends Controller
     public function destroy(Event $event): JsonResponse
     {
         // Vérifier que l'utilisateur est l'organisateur de l'événement
-        if ($event->organizer_id !== Auth::id()) {
+        if (Auth::id() !== $event->organizer_id && !Auth::user()->isAdmin()) {
             return response()->json([
-                'message' => 'Seul l\'organisateur peut supprimer cet événement'
+                'message' => 'Accès refusé - Seul l\'organisateur peut supprimer l\'événement'
             ], 403);
-        }
-
-        // Supprimer l'image si elle existe
-        if ($event->image) {
-            Storage::delete($event->image);
         }
 
         $event->delete();
@@ -342,7 +372,7 @@ class EventController extends Controller
      *     operationId="searchEvents",
      *     tags={"Événements"},
      *     summary="Rechercher des événements",
-     *     description="Recherche avancée d'événements avec plusieurs critères",
+     *     description="Recherche des événements par titre, description ou lieu",
      *     @OA\Parameter(
      *         name="q",
      *         in="query",
@@ -356,185 +386,6 @@ class EventController extends Controller
      *         description="ID de la catégorie",
      *         required=false,
      *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="min_price",
-     *         in="query",
-     *         description="Prix minimum",
-     *         required=false,
-     *         @OA\Schema(type="number")
-     *     ),
-     *     @OA\Parameter(
-     *         name="max_price",
-     *         in="query",
-     *         description="Prix maximum",
-     *         required=false,
-     *         @OA\Schema(type="number")
-     *     ),
-     *     @OA\Parameter(
-     *         name="date_from",
-     *         in="query",
-     *         description="Date de début",
-     *         required=false,
-     *         @OA\Schema(type="string", format="date")
-     *     ),
-     *     @OA\Parameter(
-     *         name="date_to",
-     *         in="query",
-     *         description="Date de fin",
-     *         required=false,
-     *         @OA\Schema(type="string", format="date")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Résultats de recherche",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Event")),
-     *             @OA\Property(property="total", type="integer"),
-     *             @OA\Property(property="query", type="string")
-     *         )
-     *     )
-     * )
-     */
-    public function search(Request $request): JsonResponse
-    {
-        $query = $request->get('q');
-        
-        if (!$query) {
-            return response()->json([
-                'message' => 'Le terme de recherche est requis'
-            ], 400);
-        }
-
-        $events = Event::with(['category', 'organizer', 'participations.user'])
-            ->published()
-            ->where(function($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('location', 'like', "%{$query}%")
-                  ->orWhere('tags', 'like', "%{$query}%");
-            });
-
-        // Filtres additionnels
-        if ($request->has('category')) {
-            $events->byCategory($request->category);
-        }
-
-        if ($request->has('min_price')) {
-            $events->where('price', '>=', $request->min_price);
-        }
-
-        if ($request->has('max_price')) {
-            $events->where('price', '<=', $request->max_price);
-        }
-
-        if ($request->has('date_from')) {
-            $events->where('date', '>=', $request->date_from);
-        }
-
-        if ($request->has('date_to')) {
-            $events->where('date', '<=', $request->date_to);
-        }
-
-        $results = $events->orderBy('date', 'asc')
-                         ->paginate(15);
-
-        return response()->json([
-            'data' => EventResource::collection($results->items()),
-            'total' => $results->total(),
-            'query' => $query,
-            'pagination' => [
-                'current_page' => $results->currentPage(),
-                'last_page' => $results->lastPage(),
-                'per_page' => $results->perPage(),
-            ]
-        ]);
-    }
-
-    /**
-     * Événements de l'utilisateur connecté
-     * 
-     * @OA\Get(
-     *     path="/my-events",
-     *     operationId="getMyEvents",
-     *     tags={"Événements"},
-     *     summary="Mes événements",
-     *     description="Récupère les événements créés par l'utilisateur connecté",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="type",
-     *         in="query",
-     *         description="Type d'événements",
-     *         required=false,
-     *         @OA\Schema(type="string", enum={"created","participating"}, default="created")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Événements récupérés avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="events", type="array", @OA\Items(ref="#/components/schemas/Event"))
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Non authentifié"
-     *     )
-     * )
-     */
-    public function myEvents(Request $request): JsonResponse
-    {
-        $type = $request->get('type', 'created');
-        $user = Auth::user();
-
-        if ($type === 'created' && $user->isOrganizer()) {
-            $events = $user->events()->with(['category'])->orderBy('date', 'desc')->get();
-        } elseif ($type === 'participating') {
-            $events = $user->participations()->with(['event.category'])->get()->map->event;
-        } else {
-            $events = collect();
-        }
-
-        return response()->json([
-            'events' => EventResource::collection($events),
-            'type' => $type
-        ]);
-    }
-    /**
-     * Recherche avancée avec SearchService
-     * 
-     * @OA\Get(
-     *     path="/events/advanced-search",
-     *     operationId="advancedSearchEvents",
-     *     tags={"Événements"},
-     *     summary="Recherche avancée d'événements",
-     *     description="Recherche avancée avec filtres multiples et tri personnalisé",
-     *     @OA\Parameter(
-     *         name="q",
-     *         in="query",
-     *         description="Terme de recherche",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="category",
-     *         in="query",
-     *         description="ID de la catégorie",
-     *         required=false,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="min_price",
-     *         in="query",
-     *         description="Prix minimum",
-     *         required=false,
-     *         @OA\Schema(type="number")
-     *     ),
-     *     @OA\Parameter(
-     *         name="max_price",
-     *         in="query",
-     *         description="Prix maximum",
-     *         required=false,
-     *         @OA\Schema(type="number")
      *     ),
      *     @OA\Parameter(
      *         name="date_from",
@@ -550,128 +401,23 @@ class EventController extends Controller
      *         required=false,
      *         @OA\Schema(type="string", format="date")
      *     ),
-     *     @OA\Parameter(
-     *         name="location",
-     *         in="query",
-     *         description="Lieu de l'événement",
-     *         required=false,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="has_spots",
-     *         in="query",
-     *         description="Avec places disponibles",
-     *         required=false,
-     *         @OA\Schema(type="boolean")
-     *     ),
-     *     @OA\Parameter(
-     *         name="sort_by",
-     *         in="query",
-     *         description="Critère de tri",
-     *         required=false,
-     *         @OA\Schema(type="string", enum={"date","price","popularity","title"})
-     *     ),
-     *     @OA\Parameter(
-     *         name="sort_order",
-     *         in="query",
-     *         description="Ordre de tri",
-     *         required=false,
-     *         @OA\Schema(type="string", enum={"asc","desc"})
-     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Résultats de recherche avancée",
+     *         description="Résultats de recherche",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Event")),
-     *             @OA\Property(property="total", type="integer"),
-     *             @OA\Property(property="filters_applied", type="object")
+     *             @OA\Property(property="total", type="integer", example=25),
+     *             @OA\Property(property="query", type="string", example="jazz")
      *         )
      *     )
      * )
      */
-    public function advancedSearch(Request $request, SearchService $searchService): JsonResponse
+    public function search(Request $request): JsonResponse
     {
-        $query = $searchService->searchEvents($request);
-        $events = $query->paginate(12);
+        $searchService = new SearchService();
+        $results = $searchService->searchEvents($request->all());
 
-        return response()->json([
-            'data' => EventResource::collection($events),
-            'total' => $events->total(),
-            'filters_applied' => $request->only([
-                'q', 'category', 'min_price', 'max_price', 
-                'date_from', 'date_to', 'location', 'has_spots',
-                'sort_by', 'sort_order'
-            ])
-        ]);
-    }
-
-    /**
-     * Obtenir les suggestions de recherche
-     * 
-     * @OA\Get(
-     *     path="/events/search-suggestions",
-     *     operationId="getSearchSuggestions",
-     *     tags={"Événements"},
-     *     summary="Suggestions de recherche",
-     *     description="Obtenir des suggestions basées sur un terme de recherche",
-     *     @OA\Parameter(
-     *         name="term",
-     *         in="query",
-     *         description="Terme de recherche",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Suggestions récupérées",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="suggestions", type="array", @OA\Items(type="string"))
-     *         )
-     *     )
-     * )
-     */
-    public function searchSuggestions(Request $request, SearchService $searchService): JsonResponse
-    {
-        $term = $request->get('term');
-        
-        if (!$term || strlen($term) < 2) {
-            return response()->json([
-                'suggestions' => []
-            ]);
-        }
-
-        $suggestions = $searchService->getSearchSuggestions($term);
-
-        return response()->json([
-            'suggestions' => $suggestions
-        ]);
-    }
-
-    /**
-     * Obtenir les filtres disponibles
-     * 
-     * @OA\Get(
-     *     path="/events/available-filters",
-     *     operationId="getAvailableFilters",
-     *     tags={"Événements"},
-     *     summary="Filtres disponibles",
-     *     description="Obtenir la liste des filtres disponibles pour la recherche",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Filtres récupérés",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="categories", type="array", @OA\Items(type="object")),
-     *             @OA\Property(property="price_ranges", type="array", @OA\Items(type="object")),
-     *             @OA\Property(property="date_ranges", type="array", @OA\Items(type="object"))
-     *         )
-     *     )
-     * )
-     */
-    public function availableFilters(SearchService $searchService): JsonResponse
-    {
-        $filters = $searchService->getAvailableFilters();
-
-        return response()->json($filters);
+        return response()->json($results);
     }
 
     /**
@@ -682,17 +428,17 @@ class EventController extends Controller
      *     operationId="getPopularEvents",
      *     tags={"Événements"},
      *     summary="Événements populaires",
-     *     description="Obtenir les événements les plus populaires",
+     *     description="Récupère les événements les plus populaires basés sur le taux de participation",
      *     @OA\Parameter(
      *         name="limit",
      *         in="query",
      *         description="Nombre d'événements à retourner",
      *         required=false,
-     *         @OA\Schema(type="integer", default=10)
+     *         @OA\Schema(type="integer", default=6)
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Événements populaires",
+     *         description="Liste des événements populaires",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Event"))
      *         )
@@ -701,15 +447,101 @@ class EventController extends Controller
      */
     public function popular(Request $request): JsonResponse
     {
-        $limit = $request->get('limit', 10);
-        $events = Event::with(['category', 'organizer', 'participations.user'])
-            ->published()
-            ->upcoming()
-            ->popular($limit)
-            ->get();
+        $limit = $request->get('limit', 6);
+        
+        $events = Event::with(['category', 'organizer'])
+            ->whereIn("status", ["publié", "annulé"])
+            ->where('date', '>', now())
+            ->get()
+            ->map(function ($event) {
+                $event->participation_rate = $event->participationRate();
+                return $event;
+            })
+            ->sortByDesc('participation_rate')
+            ->take($limit);
 
         return response()->json([
             'data' => EventResource::collection($events)
+        ]);
+    }
+
+    /**
+     * Mes événements (pour les organisateurs)
+     * 
+     * @OA\Get(
+     *     path="/my-events",
+     *     operationId="getMyEvents",
+     *     tags={"Événements"},
+     *     summary="Mes événements",
+     *     description="Récupère les événements créés par l'utilisateur connecté",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filtrer par statut",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"brouillon","publié","annulé"})
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Liste des événements de l'organisateur",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="events", type="array", @OA\Items(ref="#/components/schemas/Event"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Non authentifié"
+     *     )
+     * )
+     */
+    public function myEvents(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $query = Event::with(['category', 'organizer'])
+            ->where('organizer_id', $user->id);
+
+        // Filtrer par statut si spécifié
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $events = $query->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'events' => EventResource::collection($events)
+        ]);
+    }
+
+    /**
+     * Filtres disponibles pour les événements
+     * 
+     * @OA\Get(
+     *     path="/events/available-filters",
+     *     operationId="getAvailableFilters",
+     *     tags={"Événements"},
+     *     summary="Filtres disponibles",
+     *     description="Récupère les catégories et autres filtres disponibles",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Filtres disponibles",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="categories", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Musique"),
+     *                 @OA\Property(property="icon", type="string", example="���")
+     *             ))
+     *         )
+     *     )
+     * )
+     */
+    public function availableFilters(): JsonResponse
+    {
+        $categories = Category::select('id', 'name', 'icon')->get();
+
+        return response()->json([
+            'categories' => $categories
         ]);
     }
 }

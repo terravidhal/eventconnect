@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { participationsApi } from '@/lib/api/participations'
-import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import type { Event, Participation } from '@/types'
-import { CheckCircle, Clock, Users, X, CalendarX } from 'lucide-react'
+import { toast } from 'sonner'
+import { CalendarX, XCircle } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/auth-store'
 import { useQuery } from '@tanstack/react-query'
 import { authApi } from '@/lib/api/auth'
+import type { Event, Participation } from '@/types'
 
 interface ParticipationDialogProps {
   eventId: number
@@ -18,14 +19,14 @@ interface ParticipationDialogProps {
 
 export default function ParticipationDialog({ eventId, event }: ParticipationDialogProps) {
   const [open, setOpen] = useState(false)
-  const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [unsubscribeLoading, setUnsubscribeLoading] = useState(false)
+  const [notes, setNotes] = useState('')
   const queryClient = useQueryClient()
-  const user = useAuthStore((state) => state.user)
+  
+  const user = useAuthStore((s) => s.user)
   const token = localStorage.getItem('token')
-
-  // Récupérer les données utilisateur si le token existe mais pas l'utilisateur
+  
   const { data: userData } = useQuery({
     queryKey: ['user'],
     queryFn: authApi.getUser,
@@ -33,26 +34,23 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
     retry: false
   })
 
-  // Utiliser l'utilisateur du store ou celui récupéré via API
   const currentUser = user || userData
 
   // Vérifier si l'événement est expiré
   const isExpired = new Date(event.date) < new Date()
+  const isCancelled = event.status === 'annulé'
 
   const handleConfirm = async () => {
+    if (!currentUser) {
+      toast.error('Vous devez être connecté pour vous inscrire')
+      return
+    }
+
     try {
       setLoading(true)
-      const response = await participationsApi.participate(eventId, notes || undefined)
+      await participationsApi.participate(eventId, notes)
       
-      // Afficher le message approprié selon le statut
-      if (response.participation?.status === 'inscrit') {
-        toast.success('Inscription confirmée ! Vous recevrez un email de confirmation.')
-      } else if (response.participation?.status === 'en_attente') {
-        toast.success('Vous êtes sur la liste d\'attente. Vous serez notifié si une place se libère.')
-      } else {
-        toast.success('Inscription enregistrée')
-      }
-      
+      toast.success('Inscription réussie !')
       setOpen(false)
       setNotes('')
       
@@ -86,20 +84,39 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
   }
 
   // Debug: Afficher les valeurs pour vérifier
-  console.log('Event data:', {
+ /* console.log('Event data:', {
     is_participating: event.is_participating,
     participation_status: event.participation_status,
     eventId,
     participations: event.participations,
     user: currentUser?.id,
     token: !!token,
-    isExpired
-  })
+    isExpired,
+    isCancelled
+  })*/
 
   // Détecter si l'utilisateur est inscrit en vérifiant les participations
   const userParticipation = event.participations?.find((p: Participation) => p.user?.id === currentUser?.id)
   const isParticipating = event.is_participating || !!userParticipation
   const participationStatus = event.participation_status || userParticipation?.status
+
+  // Si l'événement est annulé - Priorité absolue
+  if (isCancelled) {
+    return (
+      <div className="flex items-center gap-3">
+        {/* Badge d'événement annulé */}
+        <div className="px-4 py-2 rounded-lg bg-red-600 text-white flex items-center gap-2 text-sm font-medium shadow-sm">
+          <XCircle className="h-5 w-5" />
+          Événement annulé
+        </div>
+        
+        {/* Bouton désactivé */}
+        <Button disabled variant="outline" className="opacity-60 cursor-not-allowed">
+          Inscription fermée
+        </Button>
+      </div>
+    )
+  }
 
   // Si l'événement est expiré - Priorité absolue
   if (isExpired) {
@@ -128,32 +145,25 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
       : 'bg-gray-500 text-white'
     
     const statusText = participationStatus === 'inscrit' 
-      ? 'Vous êtes inscrit' 
+      ? 'Inscrit' 
       : participationStatus === 'en_attente'
-      ? 'Sur liste d\'attente'
+      ? 'En attente'
       : 'Statut inconnu'
-
-    const statusIcon = participationStatus === 'inscrit' 
-      ? <CheckCircle className="h-5 w-5" />
-      : <Clock className="h-5 w-5" />
 
     return (
       <div className="flex items-center gap-3">
         {/* Badge de statut */}
         <div className={`px-4 py-2 rounded-lg ${statusColor} flex items-center gap-2 text-sm font-medium shadow-sm`}>
-          {statusIcon}
-          {statusText}
+          <span>{statusText}</span>
         </div>
         
         {/* Bouton de désinscription */}
         <Button 
+          variant="outline" 
           onClick={handleUnsubscribe}
           disabled={unsubscribeLoading}
-          variant="destructive"
-          size="sm"
-          className="flex items-center gap-2"
+          className="hover:bg-red-50 hover:border-red-200 hover:text-red-600"
         >
-          <X className="h-4 w-4" />
           {unsubscribeLoading ? 'Désinscription...' : 'Se désinscrire'}
         </Button>
       </div>
@@ -161,12 +171,11 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
   }
 
   // Si l'événement est complet
-  if (event.is_full) {
+  if (event.available_spots === 0) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+          <Button variant="outline" className="w-full">
             Liste d'attente
           </Button>
         </DialogTrigger>
@@ -175,63 +184,69 @@ export default function ParticipationDialog({ eventId, event }: ParticipationDia
             <DialogTitle>Rejoindre la liste d'attente</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <p className="text-sm text-orange-800">
-                ⚠️ Cet événement est complet. En vous inscrivant, vous rejoignez la liste d'attente. 
-                Vous serez automatiquement inscrit si une place se libère.
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Cet événement est complet, mais vous pouvez rejoindre la liste d'attente. 
+              Vous serez automatiquement inscrit si une place se libère.
+            </p>
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Notes (optionnel)</label>
-              <Input 
-                value={notes} 
-                onChange={(e) => setNotes(e.target.value)} 
-                placeholder="Allergies, préférences..." 
+              <Label htmlFor="notes">Notes (optionnel)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Ajoutez des notes pour l'organisateur..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
               />
             </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleConfirm} disabled={loading}>
+                {loading ? 'Inscription...' : 'Rejoindre la liste d\'attente'}
+              </Button>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-            <Button onClick={handleConfirm} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
-              {loading ? 'Inscription...' : 'Rejoindre la liste d\'attente'}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     )
   }
 
-  // Inscription normale
+  // Événement avec places disponibles
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>S'inscrire</Button>
+        <Button className="w-full">
+          S'inscrire
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Confirmer votre inscription</DialogTitle>
+          <DialogTitle>S'inscrire à l'événement</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-sm text-green-800">
-              ✅ Il reste {event.available_spots} place(s) disponible(s) pour cet événement.
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Vous êtes sur le point de vous inscrire à cet événement.
+          </p>
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Notes (optionnel)</label>
-            <Input 
-              value={notes} 
-              onChange={(e) => setNotes(e.target.value)} 
-              placeholder="Allergies, préférences..." 
+            <Label htmlFor="notes">Notes (optionnel)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Ajoutez des notes pour l'organisateur..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
             />
           </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleConfirm} disabled={loading}>
+              {loading ? 'Inscription...' : 'Confirmer l\'inscription'}
+            </Button>
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-          <Button onClick={handleConfirm} disabled={loading}>
-            {loading ? 'Validation...' : 'Confirmer l\'inscription'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -35,7 +35,7 @@ class StoreEventRequest extends FormRequest
             'tags' => 'nullable|array|max:10',
             'tags.*' => 'string|max:50',
             'status' => 'nullable|in:brouillon,publié,annulé',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|url|max:500',
         ];
     }
 
@@ -73,9 +73,8 @@ class StoreEventRequest extends FormRequest
             'tags.*.string' => 'Chaque tag doit être une chaîne de caractères.',
             'tags.*.max' => 'Chaque tag ne peut pas dépasser 50 caractères.',
             'status.in' => 'Le statut doit être "brouillon", "publié" ou "annulé".',
-            'image.image' => 'Le fichier doit être une image.',
-            'image.mimes' => 'L\'image doit être au format JPEG, PNG, JPG ou GIF.',
-            'image.max' => 'L\'image ne peut pas dépasser 2 Mo.',
+            'image.url' => 'L\'image doit être une URL valide.',
+            'image.max' => 'L\'URL de l\'image ne peut pas dépasser 500 caractères.',
         ];
     }
 

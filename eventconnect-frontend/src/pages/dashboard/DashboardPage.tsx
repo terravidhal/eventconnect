@@ -24,7 +24,11 @@ export default function DashboardPage() {
   })
 
   // Calculer le nombre d'événements organisés (seulement pour organisateurs/admin)
-  const eventsCount = Array.isArray(myEvents) ? myEvents.length : 0
+  // La réponse de l'API est: { events: [...] }
+  const eventsArray = Array.isArray((myEvents as any)?.events) 
+    ? (myEvents as any).events 
+    : []
+  const eventsCount = eventsArray.length
   
   // Calculer le nombre de participations (pour tous les utilisateurs)
   // La réponse de l'API est: { participations: [...] }

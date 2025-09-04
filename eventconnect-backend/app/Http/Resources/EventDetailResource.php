@@ -25,7 +25,7 @@ class EventDetailResource extends JsonResource
             'capacity' => $this->capacity,
             'price' => $this->price,
             'image' => $this->image,
-            'tags' => $this->tags,
+            'tags' => is_string($this->tags) ? json_decode($this->tags, true) : $this->tags,
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

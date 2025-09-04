@@ -1,17 +1,18 @@
+import React from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { eventsApi } from '@/lib/api/events'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
-import ImageUpload from '@/components/files/ImageUpload'
-import ImageGallery from '@/components/files/ImageGallery'
+import { ArrowLeft } from 'lucide-react'
+import type { Category } from '@/types'
 
 const schema = z.object({
   title: z.string().min(3, 'Au moins 3 caractères'),
@@ -22,13 +23,15 @@ const schema = z.object({
   price: z.coerce.number().min(0, 'Prix >= 0').optional(),
   category_id: z.coerce.number().int().positive('Catégorie requise'),
   tags: z.string().optional(),
-  status: z.enum(['brouillon', 'publié', 'annulé']).default('brouillon'),
+  status: z.enum(['brouillon', 'publié', 'annulé']).optional(),
+  image: z.string().url('URL invalide').optional().or(z.literal('')),
 })
 
 export default function EditEventPage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const eventId = Number(id)
+  const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['event', eventId],
@@ -36,29 +39,48 @@ export default function EditEventPage() {
     queryFn: () => eventsApi.get(eventId),
   })
 
+  // Récupérer les catégories
+  const { data: filtersData, isLoading: categoriesLoading } = useQuery({
+    queryKey: ['available-filters'],
+    queryFn: () => eventsApi.availableFilters(),
+  })
+  
+  const categories = (filtersData?.categories || []) as Category[]
+
+  // Préparer les valeurs par défaut basées sur les données
+  const getDefaultValues = () => {
+    if (data) {
+      return {
+        title: data.title || '',
+        description: data.description || '',
+        date: data.date?.slice(0, 16) || '',
+        location: data.location || '',
+        capacity: data.capacity || 10,
+        price: data.price ?? 0,
+        category_id: (data as any).category?.id || 1,
+        tags: Array.isArray((data as any).tags) ? (data as any).tags.join(', ') : '',
+        status: data.status || 'brouillon',
+        image: data.image || '',
+      }
+    }
+    return {
+      title: '', description: '', date: '', location: '', capacity: 10,
+      price: 0, category_id: 1, tags: '', status: 'brouillon', image: '',
+    }
+  }
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: '', description: '', date: '', location: '', capacity: 10,
-      price: 0, category_id: 1, tags: '', status: 'brouillon',
-    }
+    defaultValues: getDefaultValues()
   })
 
+  // Réinitialiser le formulaire quand les données changent
   React.useEffect(() => {
     if (data) {
-      form.reset({
-        title: data.title,
-        description: data.description,
-        date: data.date?.slice(0, 16),
-        location: data.location,
-        capacity: data.capacity,
-        price: data.price ?? 0,
-        category_id: (data as any).category?.id ?? 1,
-        tags: Array.isArray((data as any).tags) ? (data as any).tags.join(', ') : '',
-        status: data.status as any,
-      })
+      const formData = getDefaultValues()
+      form.reset(formData)
     }
-  }, [data])
+  }, [data, form])
 
   if (!Number.isFinite(eventId)) return <p className="text-destructive">ID invalide</p>
   if (isLoading) return <p className="text-muted-foreground">Chargement...</p>
@@ -70,7 +92,19 @@ export default function EditEventPage() {
         ...values,
         tags: values.tags ? values.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       }
+      
+      // Supprimer le champ image s'il est vide
+      if (!payload.image) {
+        delete (payload as any).image
+      }
+      
       await eventsApi.update(eventId, payload as any)
+      
+      // Invalider les queries pour rafraîchir les données
+      await queryClient.invalidateQueries({ queryKey: ['event', eventId] })
+      await queryClient.invalidateQueries({ queryKey: ['events'] })
+      await queryClient.invalidateQueries({ queryKey: ['my-events'] })
+      
       toast.success('Événement mis à jour')
       navigate('/dashboard/events', { replace: true })
     } catch (err: any) {
@@ -81,7 +115,15 @@ export default function EditEventPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Modifier l'événement</h2>
+      {/* Bouton retour */}
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/events')} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Retour
+        </Button>
+        <h2 className="text-2xl font-semibold">Modifier l'événement</h2>
+      </div>
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 max-w-2xl">
           <FormField control={form.control} name="title" render={({ field }) => (
@@ -97,6 +139,22 @@ export default function EditEventPage() {
               <FormLabel>Description</FormLabel>
               <FormControl><Textarea rows={4} {...field} /></FormControl>
               <FormMessage />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="image" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Image de l'événement (URL)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="https://example.com/event-image.jpg" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+              <p className="text-xs text-muted-foreground">
+                Entrez l'URL d'une image pour illustrer votre événement (optionnel)
+              </p>
             </FormItem>
           )} />
 
@@ -135,8 +193,24 @@ export default function EditEventPage() {
 
             <FormField control={form.control} name="category_id" render={({ field }) => (
               <FormItem>
-                <FormLabel>Catégorie (ID)</FormLabel>
-                <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                <FormLabel>Catégorie</FormLabel>
+                <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value ? String(field.value) : undefined} disabled={categoriesLoading || categories.length === 0}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder={categoriesLoading ? "Chargement..." : "Choisir une catégorie"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={String(category.id)}>
+                        <div className="flex items-center gap-2">
+                          <span>{category.icon}</span>
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )} />
@@ -144,7 +218,7 @@ export default function EditEventPage() {
 
           <FormField control={form.control} name="tags" render={({ field }) => (
             <FormItem>
-              <FormLabel>Tags</FormLabel>
+              <FormLabel>Tags (séparés par des virgules)</FormLabel>
               <FormControl><Input {...field} /></FormControl>
               <FormMessage />
             </FormItem>
@@ -153,9 +227,11 @@ export default function EditEventPage() {
           <FormField control={form.control} name="status" render={({ field }) => (
             <FormItem>
               <FormLabel>Statut</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                 <FormControl>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir" />
+                  </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="brouillon">Brouillon</SelectItem>
@@ -169,16 +245,10 @@ export default function EditEventPage() {
 
           <div className="flex gap-2">
             <Button type="submit">Enregistrer</Button>
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>Annuler</Button>
+            <Button type="button" variant="outline" onClick={() => navigate('/dashboard/events')}>Annuler</Button>
           </div>
         </form>
       </Form>
-
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">Images de l'événement</h3>
-        <ImageUpload eventId={eventId} onUploaded={() => { /* Optionally trigger gallery refresh via state */ }} />
-        <ImageGallery eventId={eventId} />
-      </div>
     </div>
   )
-} 
+}

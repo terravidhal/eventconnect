@@ -5,7 +5,7 @@ import type { Event } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ParticipationDialog from '@/components/events/ParticipationDialog'
-import { Users, MapPin, Calendar, Clock, CalendarX } from 'lucide-react'
+import { Users, MapPin, Calendar, Clock, CalendarX, XCircle, CircleDollarSign } from 'lucide-react'
 import { getDefaultImage } from '@/lib/constants/images'
 
 export default function EventDetailPage() {
@@ -24,8 +24,9 @@ export default function EventDetailPage() {
 
   const e = data as Event
   
-  // Vérifier si l'événement est expiré
+  // Vérifier si l'événement est expiré ou annulé
   const isExpired = new Date(e.date) < new Date()
+  const isCancelled = e.status === 'annulé'
   
   const imageUrl = e.image || ''
   const statusColor = e.status === 'publié' ? 'bg-green-100 text-green-700' : e.status === 'annulé' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'
@@ -51,8 +52,15 @@ export default function EventDetailPage() {
         <h2 className="text-2xl font-semibold flex items-center gap-3">
           {e.title}
           <span className={`text-xs px-2 py-1 rounded ${statusColor} capitalize`}>{e.status}</span>
+          {/* Badge d'événement annulé */}
+          {isCancelled && (
+            <span className="text-xs px-2 py-1 rounded bg-red-600 text-white flex items-center gap-1">
+              <XCircle className="h-3 w-3" />
+              Annulé
+            </span>
+          )}
           {/* Badge d'événement expiré */}
-          {isExpired && (
+          {isExpired && !isCancelled && (
             <span className="text-xs px-2 py-1 rounded bg-red-500 text-white flex items-center gap-1">
               <CalendarX className="h-3 w-3" />
               Expiré
@@ -61,105 +69,160 @@ export default function EventDetailPage() {
         </h2>
         <div className="flex gap-2">
           <Button asChild variant="outline"><Link to="/events">Retour</Link></Button>
-          <ParticipationDialog eventId={e.id} event={e} />
+          {!isCancelled && <ParticipationDialog eventId={e.id} event={e} />}
         </div>
       </div>
+
+      {/* Message d'annulation */}
+      {isCancelled && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 text-red-700">
+              <XCircle className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Cet événement a été annulé</p>
+                <p className="text-sm text-red-600">Nous nous excusons pour la gêne occasionnée.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Message d'expiration */}
+      {isExpired && !isCancelled && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 text-orange-700">
+              <CalendarX className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Cet événement a déjà eu lieu</p>
+                <p className="text-sm text-orange-600">Les inscriptions sont fermées.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Places disponibles */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
             Places disponibles
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold text-primary">
-              {e.available_spots || 0} / {e.capacity}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{e.available_spots || 0}</div>
+              <div className="text-sm text-muted-foreground">Places libres</div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {e.participants_count || 0} participants inscrits
+            <div className="text-center">
+              <div className="text-2xl font-bold">{e.capacity}</div>
+              <div className="text-sm text-muted-foreground">Capacité totale</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{e.participation_rate || 0}%</div>
+              <div className="text-sm text-muted-foreground">Taux de participation</div>
             </div>
           </div>
-          {e.is_full && !isExpired && (
-            <div className="mt-2 text-sm text-orange-600 font-medium">
-              ⚠️ Événement complet - Liste d'attente disponible
-            </div>
-          )}
-          {isExpired && (
-            <div className="mt-2 text-sm text-red-600 font-medium">
-              ❌ Cet événement a déjà eu lieu
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Informations</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Date:</span> 
-            <span className={isExpired ? 'text-red-600 font-medium' : ''}>
-              {new Date(e.date).toLocaleString()}
-            </span>
-            {isExpired && (
-              <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 ml-2">
-                Événement passé
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Lieu:</span> {e.location}
-          </div>
-          {typeof e.latitude === 'number' && typeof e.longitude === 'number' && (
-            <div><span className="text-muted-foreground">Coordonnées:</span> {e.latitude}, {e.longitude}</div>
-          )}
-          <div><span className="text-muted-foreground">Capacité:</span> {e.capacity}</div>
-          {typeof e.price === 'number' && <div><span className="text-muted-foreground">Prix:</span> {e.price} €</div>}
-          <div><span className="text-muted-foreground">Créé le:</span> {new Date(e.created_at).toLocaleString()}</div>
-          <div><span className="text-muted-foreground">Mis à jour le:</span> {new Date(e.updated_at).toLocaleString()}</div>
-          {Array.isArray(e.tags) && e.tags.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-muted-foreground">Tags:</span>
-              <div className="flex items-center gap-2 flex-wrap">
-                {e.tags.map((t, i) => (
-                  <span key={i} className="text-xs px-2 py-1 rounded bg-muted">{t}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Catégorie et organisateur */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Informations détaillées */}
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Catégorie</CardTitle>
+            <CardTitle>Informations</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center gap-2">
-            <span className="text-2xl">{e.category?.icon || '���'}</span>
-            <span className="font-medium">{e.category?.name || 'Non catégorisé'}</span>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <div className="font-medium">Date et heure</div>
+                <div className="text-sm text-muted-foreground">
+                  {new Date(e.date).toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <div className="font-medium">Lieu</div>
+                <div className="text-sm text-muted-foreground">{e.location}</div>
+              </div>
+            </div>
+            
+            {e.price && (
+              <div className="flex items-center gap-3">
+                <CircleDollarSign className="h-4 w-4 text-muted-foreground"/>
+                <div>
+                  <div className="font-medium">Prix</div>
+                  <div className="text-sm text-muted-foreground">{e.price}€</div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Organisateur</CardTitle>
+            <CardTitle>Organisateur</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm space-y-1">
-              <div className="font-medium">{e.organizer?.name || 'Organisateur inconnu'}</div>
-              <div className="text-muted-foreground">{e.organizer?.email || 'Email non disponible'}</div>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-medium text-primary">
+                  {e.organizer.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <div className="font-medium">{e.organizer.name}</div>
+                <div className="text-sm text-muted-foreground">{e.organizer.email}</div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Description */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Description</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground leading-relaxed">{e.description}</p>
+        </CardContent>
+      </Card>
+
+      {/* Tags */}
+      {e.tags && e.tags.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tags</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {e.tags.map((tag, index) => (
+                <span 
+                  key={index}
+                  className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
