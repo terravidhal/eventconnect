@@ -1,7 +1,7 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './auth/LoginPage'
 import RegisterPage from './auth/RegisterPage'
-import AuthLayout from '@/components/layout/AuthLayout'
+
 
 export default function AuthRoutes() {
   return (

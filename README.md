@@ -164,6 +164,34 @@ flowchart TD
   E --> E2[Courbes inscriptions / événements]
 ```
 
+
+## ��� Documentation API (Swagger)
+
+Le backend Laravel inclut une documentation Swagger complète et interactive :
+
+### Accès à Swagger
+
+1. **Démarrer le backend** : `php artisan serve`
+2. **Ouvrir dans le navigateur** : `http://localhost:8000/api/documentation`
+3. **Interface interactive** : Testez tous les endpoints directement depuis le navigateur
+
+### Fonctionnalités Swagger
+
+- **Authentification** : Utilisez le token Bearer pour tester les routes protégées
+- **Endpoints documentés** :
+  - **Auth** : `/api/auth/*` (login, register, profile)
+  - **Events** : `/api/events/*` (CRUD des événements)
+  - **Categories** : `/api/categories` (liste des catégories)
+  - **Participations** : `/api/participations/*` (inscription aux événements)
+  - **Admin** : `/api/admin/*` (statistiques, modération)
+- **Schémas de données** : Modèles complets avec validation
+- **Exemples de requêtes/réponses** : Pour chaque endpoint
+
+### Comment utiliser Swagger
+
+1. **Se connecter** : Utilisez `/api/auth/login` pour obtenir un token
+2. **Authentifier** : Cliquez sur "Authorize" et entrez `Bearer <votre_token>`
+3. **Tester** : Cliquez sur nimporte
 ## Scripts utiles
 
 Backend:

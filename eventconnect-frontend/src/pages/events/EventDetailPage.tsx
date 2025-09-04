@@ -5,7 +5,7 @@ import type { Event } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ParticipationDialog from '@/components/events/ParticipationDialog'
-import { Users, MapPin, Calendar, Clock, CalendarX, XCircle, CircleDollarSign } from 'lucide-react'
+import { Users, MapPin, Calendar, CalendarX, XCircle, CircleDollarSign } from 'lucide-react'
 import { getDefaultImage } from '@/lib/constants/images'
 
 export default function EventDetailPage() {

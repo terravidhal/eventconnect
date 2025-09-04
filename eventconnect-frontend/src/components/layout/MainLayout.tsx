@@ -1,7 +1,3 @@
-import { Link, NavLink } from 'react-router-dom'
-import { ModeToggle } from '@/components/mode-toggle'
-import SearchBar from '@/components/events/SearchBar'
-import { Calendar } from 'lucide-react'
 import NavBar from '@/components/layout/NavBar'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {

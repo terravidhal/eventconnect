@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ModeToggle } from '@/components/mode-toggle'
 import SearchBar from '@/components/events/SearchBar'
-import { Calendar, Menu, X, User } from 'lucide-react'
+import { Calendar, LayoutDashboard, LogOut, Menu, User, X } from 'lucide-react'
 import { useAuthStore } from '@/lib/store/auth-store'
 import {
   DropdownMenu,
@@ -38,13 +38,13 @@ export default function NavBar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
+            <Link to="/" className={`relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary ${location.pathname === "/" ? "text-primary font-semibold" : ""}`}>
               Accueil
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-200 ${location.pathname === "/" ? "w-full" : "w-0 group-hover:w-full"}`}></span>
             </Link>
-            <Link to="/events" className="relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary">
+            <Link to="/events" className={`relative group px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary ${location.pathname === "/events" ? "text-primary font-semibold" : ""}`}>
               Événements
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"></span>
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-200 ${location.pathname === "/events" ? "w-full" : "w-0 group-hover:w-full"}`}></span>
             </Link>
             {onLanding && (
               <>
@@ -78,26 +78,37 @@ export default function NavBar() {
                         className="w-8 h-8 rounded-full object-cover border-2 border-primary/20"
                         onError={(e) => {
                           // Fallback si l'image ne charge pas
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                          const parent = target.parentElement
+                          if (parent) {
+                            const fallback = document.createElement('div')
+                            fallback.className = 'w-8 h-8 rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-semibold'
+                            fallback.textContent = (user.name || 'U').charAt(0).toUpperCase()
+                            parent.appendChild(fallback)
+                          }
                         }}
                       />
-                    ) : null}
-                    <div className={`w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold ${user.avatar ? 'hidden' : ''}`}>
-                      {user.name?.slice(0,1)?.toUpperCase() || 'U'}
-                    </div>
-                    <span className="text-sm font-medium max-w-[160px] truncate">{user.name || user.email}</span>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                        {(user.name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium">{user.name || 'Utilisateur'}</span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard">Dashboard</Link>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Tableau de bord
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard/profile">Profil</Link>
+                  <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Mon profil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); logout(); navigate('/home', { replace: true }) }}>
-                    Déconnexion
+                  <DropdownMenuItem onClick={logout} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Se déconnecter
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -105,11 +116,11 @@ export default function NavBar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center gap-3">
-            <ModeToggle />
+          <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="hover:text-primary focus:outline-none focus:ring-2 focus:ring-ring rounded-lg p-2 transition-colors"
+              className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              aria-label="Menu"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -118,46 +129,108 @@ export default function NavBar() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden animate-in slide-in-from-top-2 duration-200">
-            <div className="px-2 pt-2 pb-3 space-y-1 border-t border-border/50 bg-background/95 backdrop-blur-md">
-              <Link to="/" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">Accueil</Link>
-              <Link to="/events" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">Événements</Link>
+          <div className="md:hidden border-t border-border/50 py-4">
+            <div className="space-y-2">
+              <Link 
+                to="/" 
+                className={`block px-4 py-3 text-sm font-medium rounded-lg transition-colors ${location.pathname === "/" ? "text-primary bg-primary/10" : "hover:bg-muted/50"}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Accueil
+              </Link>
+              <Link 
+                to="/events" 
+                className={`block px-4 py-3 text-sm font-medium rounded-lg transition-colors ${location.pathname === "/events" ? "text-primary bg-primary/10" : "hover:bg-muted/50"}`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Événements
+              </Link>
               {onLanding && (
                 <>
-                  <a href="#features" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">Fonctionnalités</a>
-                  <a href="#faq" className="block px-3 py-2 hover:text-primary hover:bg-muted/50 rounded-md transition-colors">FAQ</a>
+                  <a 
+                    href="#features" 
+                    className="block px-4 py-3 text-sm font-medium rounded-lg transition-colors hover:bg-muted/50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Fonctionnalités
+                  </a>
+                  <a 
+                    href="#faq" 
+                    className="block px-4 py-3 text-sm font-medium rounded-lg transition-colors hover:bg-muted/50"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    FAQ
+                  </a>
                 </>
               )}
-              <div className="px-3 py-2">
+              <div className="px-4 py-2">
                 <SearchBar />
               </div>
-              {!user && (
-                <Link to="/auth/register" className="block px-3 py-2 bg-primary text-primary-foreground rounded-md text-center font-medium">
-                  Créer un compte
-                </Link>
-              )}
-              {user && (
-                <div className="px-3 py-2 space-y-1">
-                  <div className="flex items-center gap-2 px-3 py-2">
+              <div className="px-4 py-2">
+                <ModeToggle />
+              </div>
+              {!user ? (
+                <div className="px-4 py-2">
+                  <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground">
+                    <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>
+                      Créer un compte
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="px-4 py-2 space-y-2">
+                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 rounded-lg">
                     {user.avatar ? (
                       <img 
                         src={user.avatar} 
                         alt={user.name || 'Avatar'} 
-                        className="w-6 h-6 rounded-full object-cover"
+                        className="w-8 h-8 rounded-full object-cover border-2 border-primary/20"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                          const parent = target.parentElement
+                          if (parent) {
+                            const fallback = document.createElement('div')
+                            fallback.className = 'w-8 h-8 rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-semibold'
+                            fallback.textContent = (user.name || 'U').charAt(0).toUpperCase()
+                            parent.appendChild(fallback)
+                          }
                         }}
                       />
-                    ) : null}
-                    <div className={`w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold ${user.avatar ? 'hidden' : ''}`}>
-                      {user.name?.slice(0,1)?.toUpperCase() || 'U'}
-                    </div>
-                    <span className="text-sm font-medium">{user.name || user.email}</span>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                        {(user.name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium">{user.name || 'Utilisateur'}</span>
                   </div>
-                  <Link to="/dashboard" className="block px-3 py-2 hover:bg-muted rounded-md">Dashboard</Link>
-                  <Link to="/dashboard/profile" className="block px-3 py-2 hover:bg-muted rounded-md">Profil</Link>
-                  <button onClick={() => { logout(); navigate('/home', { replace: true }) }} className="w-full text-left px-3 py-2 hover:bg-muted rounded-md">Déconnexion</button>
+                  <button 
+                    onClick={() => {
+                      navigate('/dashboard')
+                      setIsMenuOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-muted/50"
+                  >
+                    Tableau de bord
+                  </button>
+                  <button 
+                    onClick={() => {
+                      navigate('/profile')
+                      setIsMenuOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-muted/50"
+                  >
+                    Mon profil
+                  </button>
+                  <button 
+                    onClick={() => {
+                      logout()
+                      setIsMenuOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors text-destructive hover:bg-destructive/10"
+                  >
+                    Se déconnecter
+                  </button>
                 </div>
               )}
             </div>

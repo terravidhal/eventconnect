@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,8 +11,6 @@ import {
   Check, 
   ArrowRight, 
   Play,
-  Menu,
-  X,
   Music,
   Trophy,
   Palette,
@@ -25,7 +23,6 @@ import {
   Facebook,
   Instagram,
   Linkedin,
-  Github,
   TrendingUp,
   Globe,
   Heart,
@@ -33,8 +30,6 @@ import {
   Target,
   Sparkles
 } from 'lucide-react'
-import SearchBar from '@/components/events/SearchBar'
-import { ModeToggle } from '@/components/mode-toggle'
 import { useQuery } from '@tanstack/react-query'
 import { eventsApi } from '@/lib/api/events'
 import type { Event } from '@/types'
@@ -179,7 +174,7 @@ const FAQ = [
 ]
 
 export default function LandingPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+//  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (

@@ -13,7 +13,7 @@ import AdminDashboardPage from '@/pages/dashboard/admin/AdminDashboardPage'
 import ModerateEventsPage from '@/pages/dashboard/admin/ModerateEventsPage'
 import UsersAdminPage from '@/pages/dashboard/admin/UsersAdminPage'
 import GlobalStatsPage from '@/pages/dashboard/admin/GlobalStatsPage'
-import MaintenancePage from '@/pages/dashboard/admin/MaintenancePage'
+
 
 export default function DashboardRoutes() {
   const { RoleProtectedRoute } = useProtectedRoute()

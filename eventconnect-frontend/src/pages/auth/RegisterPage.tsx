@@ -152,7 +152,6 @@ export default function RegisterPage() {
                             <SelectContent>
                               <SelectItem value="participant">Participant</SelectItem>
                               <SelectItem value="organisateur">Organisateur</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

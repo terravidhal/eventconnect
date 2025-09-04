@@ -52,7 +52,9 @@ export default function EventsListPage() {
 
   const events = data.data || []
   const lastPage = data.meta?.last_page || 1
-  const total = data.meta?.total || 0
+ // const total = data.meta?.total || 0
+  
+ // console.log("total", total);
   
 
 

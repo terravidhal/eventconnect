@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { eventsApi } from '@/lib/api/events'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,7 @@ export default function ModerateEventsPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-events', page, perPage],
     queryFn: () => eventsApi.list({ page, per_page: perPage }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
   const removeMutation = useMutation({
