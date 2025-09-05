@@ -22,10 +22,21 @@ export default function EventDetailPage() {
   })
 
   // Charger les participations seulement pour les organisateurs et admins
+  // Maintenant tous les organisateurs peuvent voir les participants de tous les événements
   const { data: participations } = useQuery({
     queryKey: ['participations', eventId],
     queryFn: () => participationsApi.participants(eventId),
-    enabled: Number.isFinite(eventId) && eventId > 0 && !!user && (user.role === 'organisateur' || user.role === 'admin'),
+   /* enabled: Number.isFinite(eventId) && 
+             eventId > 0 && 
+             !!user && 
+             (user.role === 'organisateur' || user.role === 'admin') &&
+             data,*/
+   enabled: Number.isFinite(eventId) &&
+   eventId > 0 &&
+   !!user &&
+   (user.role === 'organisateur' || user.role === 'admin') &&
+   !!data,
+             
     retry: false,
   })
 

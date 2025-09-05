@@ -329,8 +329,8 @@ class ParticipationController extends Controller
     {
         $user = Auth::user();
 
-        // Vérifier que l'utilisateur est organisateur ou admin
-        if (!$user || ($user->role !== 'organisateur' && $user->role !== 'admin')) {
+        // Vérifier que l'utilisateur est l'organisateur de l'événement
+        if ($event->organizer_id !== $user->id) {
             return response()->json([
                 'message' => 'Seuls les organisateurs peuvent valider les entrées'
             ], 403);
@@ -419,7 +419,7 @@ class ParticipationController extends Controller
      *     ),
      *     @OA\Response(
      *         response=403,
-     *         description="Accès refusé - Seuls les organisateurs et administrateurs peuvent voir la liste des participants"
+     *         description="Accès refusé - Seuls les organisateurs peuvent voir la liste des participants"
      *     ),
      *     @OA\Response(
      *         response=404,
@@ -431,10 +431,10 @@ class ParticipationController extends Controller
     {
         $user = Auth::user();
 
-        // Vérifier que l'utilisateur est organisateur ou admin
-        if (!$user || ($user->role !== 'organisateur' && $user->role !== 'admin')) {
+        // Vérifier que l'utilisateur est l'organisateur de l'événement
+        if ($event->organizer_id !== $user->id) {
             return response()->json([
-                'message' => 'Seuls les organisateurs et administrateurs peuvent voir la liste des participants'
+                'message' => 'Seuls les organisateurs peuvent voir la liste des participants'
             ], 403);
         }
 
