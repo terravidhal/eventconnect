@@ -1,16 +1,19 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventsApi } from '@/lib/api/events'
+import { participationsApi } from '@/lib/api/participations'
 import type { Event } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ParticipationDialog from '@/components/events/ParticipationDialog'
 import { Users, MapPin, Calendar, CalendarX, XCircle, CircleDollarSign } from 'lucide-react'
 import { getDefaultImage } from '@/lib/constants/images'
+import { useAuthStore } from '@/lib/store/auth-store'
 
 export default function EventDetailPage() {
   const { id } = useParams()
   const eventId = Number(id)
+  const user = useAuthStore((s) => s.user)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['event', eventId],
@@ -18,11 +21,40 @@ export default function EventDetailPage() {
     queryFn: () => eventsApi.get(eventId),
   })
 
-  if (!Number.isFinite(eventId)) return <p className="text-destructive">ID invalide</p>
-  if (isLoading) return <p className="text-muted-foreground">Chargement...</p>
-  if (isError || !data) return <p className="text-destructive">Événement introuvable.</p>
+  // Charger les participations seulement pour les organisateurs et admins
+  const { data: participations } = useQuery({
+    queryKey: ['participations', eventId],
+    queryFn: () => participationsApi.participants(eventId),
+    enabled: Number.isFinite(eventId) && eventId > 0 && !!user && (user.role === 'organisateur' || user.role === 'admin'),
+    retry: false,
+  })
+
+  if (!Number.isFinite(eventId)) {
+    return <p className="text-destructive">ID invalide</p>
+  }
+  
+  if (isLoading) {
+    return <p className="text-muted-foreground">Chargement...</p>
+  }
+  
+  if (isError || !data) {
+    return <p className="text-destructive">Événement introuvable.</p>
+  }
 
   const e = data as Event
+  
+  // Chercher la participation de l'utilisateur actuel
+  // L'API retourne user: { id: X } au lieu de user_id: X
+  const userParticipation = e.participations?.find(p => p.user?.id === user?.id)
+  
+  // Enrichir l'événement avec les participations si disponibles
+  const enrichedEvent = {
+    ...e,
+    participations: participations || e.participations || [],
+    // Utiliser la participation trouvée pour déterminer le statut
+    is_participating: !!userParticipation,
+    participation_status: userParticipation?.status || null
+  }
   
   // Vérifier si l'événement est expiré ou annulé
   const isExpired = new Date(e.date) < new Date()
@@ -69,7 +101,7 @@ export default function EventDetailPage() {
         </h2>
         <div className="flex gap-2">
           <Button asChild variant="outline"><Link to="/events">Retour</Link></Button>
-          {!isCancelled && <ParticipationDialog eventId={e.id} event={e} />}
+          {!isCancelled && <ParticipationDialog eventId={e.id} event={enrichedEvent} />}
         </div>
       </div>
 

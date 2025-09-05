@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Event;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 
 class SearchService
@@ -11,15 +10,15 @@ class SearchService
     /**
      * Recherche avancée d'événements
      */
-    public function searchEvents(Request $request): Builder
+    public function searchEvents(array $filters): Builder
     {
         $query = Event::with(['category', 'organizer'])
             ->published()
             ->upcoming();
 
         // Recherche textuelle
-        if ($request->has('q') && !empty($request->q)) {
-            $searchTerm = $request->q;
+        if (isset($filters['q']) && !empty($filters['q'])) {
+            $searchTerm = $filters['q'];
             $query->where(function($q) use ($searchTerm) {
                 $q->where('title', 'like', "%{$searchTerm}%")
                   ->orWhere('description', 'like', "%{$searchTerm}%")
@@ -29,35 +28,35 @@ class SearchService
         }
 
         // Filtre par catégorie
-        if ($request->has('category') && $request->category) {
-            $query->byCategory($request->category);
+        if (isset($filters['category_id']) && $filters['category_id']) {
+            $query->byCategory($filters['category_id']);
         }
 
         // Filtre par prix
-        if ($request->has('min_price') && $request->min_price !== null) {
-            $query->where('price', '>=', $request->min_price);
+        if (isset($filters['min_price']) && $filters['min_price'] !== null) {
+            $query->where('price', '>=', $filters['min_price']);
         }
 
-        if ($request->has('max_price') && $request->max_price !== null) {
-            $query->where('price', '<=', $request->max_price);
+        if (isset($filters['max_price']) && $filters['max_price'] !== null) {
+            $query->where('price', '<=', $filters['max_price']);
         }
 
         // Filtre par date
-        if ($request->has('date_from') && $request->date_from) {
-            $query->where('date', '>=', $request->date_from);
+        if (isset($filters['date_from']) && $filters['date_from']) {
+            $query->where('date', '>=', $filters['date_from']);
         }
 
-        if ($request->has('date_to') && $request->date_to) {
-            $query->where('date', '<=', $request->date_to);
+        if (isset($filters['date_to']) && $filters['date_to']) {
+            $query->where('date', '<=', $filters['date_to']);
         }
 
         // Filtre par lieu (recherche géographique)
-        if ($request->has('location') && $request->location) {
-            $query->where('location', 'like', "%{$request->location}%");
+        if (isset($filters['location']) && $filters['location']) {
+            $query->where('location', 'like', "%{$filters['location']}%");
         }
 
         // Filtre par capacité disponible
-        if ($request->has('has_spots') && $request->boolean('has_spots')) {
+        if (isset($filters['has_spots']) && $filters['has_spots']) {
             $query->whereRaw('capacity > (
                 SELECT COUNT(*) FROM participations 
                 WHERE participations.event_id = events.id 
@@ -66,8 +65,8 @@ class SearchService
         }
 
         // Tri des résultats
-        $sortBy = $request->get('sort_by', 'date');
-        $sortOrder = $request->get('sort_order', 'asc');
+        $sortBy = $filters['sort_by'] ?? 'date';
+        $sortOrder = $filters['sort_order'] ?? 'asc';
 
         switch ($sortBy) {
             case 'price':

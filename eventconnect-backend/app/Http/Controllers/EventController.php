@@ -415,9 +415,19 @@ class EventController extends Controller
     public function search(Request $request): JsonResponse
     {
         $searchService = new SearchService();
-        $results = $searchService->searchEvents($request->all());
-
-        return response()->json($results);
+        $query = $searchService->searchEvents($request->all());
+        
+        // Exécuter la requête et récupérer les résultats
+        $events = $query->get();
+        
+        // Transformer en ressources
+        $eventResources = EventResource::collection($events);
+        
+        return response()->json([
+            "data" => $eventResources,
+            "total" => $events->count(),
+            "query" => $request->get("q", "")
+        ]);
     }
 
     /**

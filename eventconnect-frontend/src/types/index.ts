@@ -48,7 +48,7 @@ export interface Event {
   is_full?: boolean
   participation_rate?: number
   is_participating?: boolean
-  participation_status?: 'inscrit' | 'en_attente' | 'annulé' | null
+  participation_status?: 'inscrit' | 'en_attente' | 'annulé' | 'checked_in' | null
   // Participations pour la liste des événements
   participations?: Participation[]
 }
