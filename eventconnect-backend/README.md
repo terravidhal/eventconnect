@@ -1,61 +1,219 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# EventConnect
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Gestion d'événements (frontend React + backend Laravel) avec rôles (participant, organisateur, admin), inscriptions, liste d'attente, notifications, dashboard, pagination/filtre/recherche.
 
-## About Laravel
+## Fonctionnalités clés
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Authentification (register/login/logout), rôles: participant, organisateur, admin
+- Catalogue d'événements: pagination, recherche, tags, statut (publié/annulé/expiré)
+- Détails d'un événement: image par défaut, badges (inscrit/en_attente/expiré/annulé)
+- Participation: inscription, désinscription, promotion auto de la liste d’attente
+- Dashboard participant/organisateur
+  - Organisateur: gestion de ses événements, liste des participants, stats de remplissage
+- Dashboard administrateur
+  - Modération des événements (datatable + recherche/pagination)
+  - Gestion des utilisateurs (datatable + recherche/pagination)
+  - Statistiques globales + graphique interactif (inscriptions/utilisateurs et événements par mois)
+- Notifications email: à l'inscription d'un participant et à la création d'un événement par un organisateur
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prérequis
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Node.js 18+
+- PNPM ou NPM
+- PHP 8.2+
+- Composer
+- MySQL/MariaDB (ou SQLite pour test rapide)
 
-## Learning Laravel
+## Démarrage rapide
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Chemin des projets:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- Backend: `eventconnect-backend/`
+- Frontend: `eventconnect-frontend/`
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1) Backend (Laravel)
 
-## Laravel Sponsors
+1. Copier l'environnement:
+   - `cd eventconnect-backend`
+   - `cp .env.example .env`
+2. Configurer la base de données dans `.env` (DB_DATABASE, DB_USERNAME, DB_PASSWORD).
+3. Installer les dépendances: `composer install`
+4. Générer la clé d'application: `php artisan key:generate`
+5. Migrer la base de données: `php artisan migrate`
+6. (Recommandé) Peupler toutes les données de démo avec le seeder principal:
+   - `php artisan db:seed` (exécute `DatabaseSeeder` qui appelle `CategorySeeder`,  `UserSeeder`, `EventSeeder`, `AdminUserSeeder`)
+7. Créer/mettre à jour l'admin (si besoin de rejouer séparément):
+   - `php artisan db:seed --class=Database\Seeders\AdminUserSeeder`
+   - Identifiants: `admin@example.com` / `password`
+8. Lancer l’API: `php artisan serve` (par défaut: `http://localhost:8000`)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Notes d'authentification: Laravel Sanctum (header Authorization: Bearer `<token>` géré côté frontend).
 
-### Premium Partners
+#### Backend `.env.example` (email et envoi de mails)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Le fichier `eventconnect-backend/.env.example` contient une configuration SMTP fonctionnelle d’exemple:
 
-## Contributing
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=infiniterraetincelle@gmail.com
+MAIL_PASSWORD="<mot_de_passe_application>"
+MAIL_FROM_ADDRESS="noreply@eventconnect.com"
+MAIL_FROM_NAME="EventConnect"
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Deux options pour recevoir réellement les emails:
 
-## Code of Conduct
+- Utiliser le compte d’exemple `infiniterraetincelle@gmail.com` (si laissé actif) avec un « mot de passe d’application » Google.
+- OU remplacer par votre propre compte Gmail: activez l’authentification à deux facteurs (2FA), puis générez un « mot de passe d’application » et placez-le dans `MAIL_PASSWORD` (NE PAS utiliser votre mot de passe normal). Gardez `MAIL_HOST=smtp.gmail.com` et `MAIL_PORT=587`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Pensez aussi à définir `FRONTEND_URL`/`FRONTEND_URL2` si vous changez les ports du frontend (liens dans les emails et CORS).
 
-## Security Vulnerabilities
+### 2) Frontend (React + Vite)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. `cd eventconnect-frontend`
+2. Installer les dépendances: `pnpm install` ou `npm install`
+3. Configurer l’URL de l’API (si besoin):
+   - Créer `.env` et définir `VITE_API_URL=http://localhost:8000/api`
+4. Démarrer: `pnpm dev` ou `npm run dev` (par défaut: `http://localhost:5173`)
 
-## License
+#### Frontend `.env.example`
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Le fichier `eventconnect-frontend/.env.example` expose les variables suivantes:
+
+```
+VITE_API_URL=http://localhost:8000/api  # Base URL de l'API Laravel
+VITE_APP_NAME=EventConnect              # Nom de l'app (affichage éventuel)
+VITE_APP_URL=http://localhost:5173      # URL locale du frontend
+```
+
+- Modifiez `VITE_API_URL` si votre backend tourne ailleurs (ex: Docker, autre port).
+
+### 3) Connexions de test
+
+- Admin: `admin@example.com` / `password`
+- Vous pouvez créer un participant/organisateur via l'inscription, puis modifier le rôle dans la BD si nécessaire.
+
+## Parcours utilisateurs (workflow)
+
+- Participant
+  - S’inscrire / Se connecter
+  - Consulter la liste des événements (`/events`), rechercher et filtrer
+  - Ouvrir un événement, s’inscrire (ou rejoindre la liste d’attente si complet)
+  - Voir ses participations depuis le dashboard participant; se désinscrire si besoin
+- Organisateur
+  - Se connecter (rôle `organisateur`)
+  - Dashboard: `Mes événements` (`/dashboard/events`): créer, éditer, supprimer
+  - Voir les participants d’un événement: confirmés / liste d’attente, taux de remplissage
+  - Marquer un événement annulé (les participants reçoivent une notification)
+- Administrateur
+  - Se connecter (rôle `admin`)
+  - Vue d’ensemble admin: `/dashboard/admin`
+  - Modération des événements: `/dashboard/admin/events` (datatable: recherche/pagination, détails, suppression)
+  - Gestion des utilisateurs: `/dashboard/admin/users` (datatable: recherche/pagination, détails, suppression)
+  - Statistiques globales: `/dashboard/admin/stats` (cartes + graphique interactif mensuel: inscriptions & événements)
+
+## Schémas (workflows)
+
+### Participant
+
+```mermaid
+flowchart TD
+  A[Accueil / Login / Register] --> B[Liste des événements]
+  B -->|Filtrer / Rechercher| B
+  B --> C[Détail événement]
+  C -->|S'inscrire| D{Capacité disponible ?}
+  D -->|Oui| E[Inscrit]
+  D -->|Non| F[Liste d'attente]
+  E --> G[Dashboard participant: Mes participations et notifications envoie d'email]
+  F --> G
+  G -->|Se désinscrire| H[Promotion auto après libération de place]
+```
+
+### Organisateur
+
+```mermaid
+flowchart TD
+  A[Connexion - role organisateur] --> B[Dashboard: Mes événements]
+  B --> C[Créer un événement]
+  B --> D[Éditer un événement]
+  B --> E[Supprimer un événement]
+  B --> F[Consulter participants]
+  F --> F1[Participants confirmés]
+  F --> F2[Liste d'attente]
+  F --> G[Voir taux de remplissage]
+  D --> H[Changer statut vers Annulé]
+```
+
+### Administrateur
+
+```mermaid
+flowchart TD
+  A[Login admin] --> B[Vue d'ensemble]
+  B --> C[Modération événements]
+  C --> C1[Recherche / Pagination]
+  C --> C2[Détails]
+  C --> C3[Supprimer]
+  B --> D[Gestion utilisateurs]
+  D --> D1[Recherche / Pagination]
+  D --> D2[Détails]
+  D --> D3[Supprimer]
+  B --> E[Statistiques]
+  E --> E1[Cartes KPI]
+  E --> E2[Courbes inscriptions / événements]
+```
+
+
+## ��� Documentation API (Swagger)
+
+Le backend Laravel inclut une documentation Swagger complète et interactive :
+
+### Accès à Swagger
+
+1. **Démarrer le backend** : `php artisan serve`
+2. **Ouvrir dans le navigateur** : `http://localhost:8000/api/documentation`
+3. **Interface interactive** : Testez tous les endpoints directement depuis le navigateur
+
+### Fonctionnalités Swagger
+
+- **Authentification** : Utilisez le token Bearer pour tester les routes protégées
+- **Endpoints documentés** :
+  - **Auth** : `/api/auth/*` (login, register, profile)
+  - **Events** : `/api/events/*` (CRUD des événements)
+  - **Categories** : `/api/categories` (liste des catégories)
+  - **Participations** : `/api/participations/*` (inscription aux événements)
+  - **Admin** : `/api/admin/*` (statistiques, modération)
+- **Schémas de données** : Modèles complets avec validation
+- **Exemples de requêtes/réponses** : Pour chaque endpoint
+
+### Comment utiliser Swagger
+
+1. **Se connecter** : Utilisez `/api/auth/login` pour obtenir un token
+2. **Authentifier** : Cliquez sur "Authorize" et entrez `Bearer <votre_token>`
+3. **Tester** : Cliquez sur nimporte
+## Scripts utiles
+
+Backend:
+
+- Lancer le serveur: `php artisan serve`
+- Migrations: `php artisan migrate`
+- Seeders: `php artisan db:seed`
+
+Frontend:
+
+- Dev server: `npm run dev`
+- Build: `npm run build`
+
+## Structure des dossiers (extrait)
+
+- `eventconnect-backend/app/Http/Controllers/` — Contrôleurs (Events, Participations, Admin)
+- `eventconnect-backend/app/Http/Resources/` — API Resources (Event, EventDetail)
+- `eventconnect-backend/app/Notifications/` — Notifications (annulation)
+- `eventconnect-frontend/src/pages/` — Pages (auth, events, dashboard, admin)
+- `eventconnect-frontend/src/components/` — UI (NavBar, Dialogs, Charts, Tables)
+- `eventconnect-frontend/src/lib/api/` — Appels API (axios, events, participations, auth)
+
+## Licence
+
+Projet pédagogique — usage académique/démonstration.
