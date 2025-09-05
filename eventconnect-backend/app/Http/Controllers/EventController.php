@@ -540,7 +540,7 @@ class EventController extends Controller
      *             @OA\Property(property="categories", type="array", @OA\Items(
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Musique"),
-     *                 @OA\Property(property="icon", type="string", example="í¾µ")
+     *                 @OA\Property(property="icon", type="string", example="ï¿½ï¿½ï¿½")
      *             ))
      *         )
      *     )

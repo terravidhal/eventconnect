@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventsApi } from '@/lib/api/events'
 import { participationsApi } from '@/lib/api/participations'
@@ -11,6 +11,7 @@ import { getDefaultImage } from '@/lib/constants/images'
 import { useAuthStore } from '@/lib/store/auth-store'
 
 export default function EventDetailPage() {
+  const navigate = useNavigate();
   const { id } = useParams()
   const eventId = Number(id)
   const user = useAuthStore((s) => s.user)
@@ -111,7 +112,8 @@ export default function EventDetailPage() {
           )}
         </h2>
         <div className="flex gap-2">
-          <Button asChild variant="outline"><Link to="/events">Retour</Link></Button>
+          {/*<Button asChild variant="outline"><Link to="/events">Retour</Link></Button>*/}
+          <Button  variant="outline" onClick={() => navigate(-1)} >Retour</Button>
           {!isCancelled && <ParticipationDialog eventId={e.id} event={enrichedEvent} />}
         </div>
       </div>

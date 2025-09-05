@@ -12,7 +12,12 @@ class StoreEventRequest extends FormRequest
     public function authorize(): bool
     {
         // Seuls les organisateurs peuvent créer des événements
-        return auth()->check() && auth()->user()->isOrganizer();
+       // return auth()->check() && auth()->user()->isOrganizer();
+
+        // Seuls les organisateurs et ls admins peuvent créer des événements
+       return auth()->check() && (
+           auth()->user()->isOrganizer() || auth()->user()->isAdmin()
+       );
     }
 
     /**

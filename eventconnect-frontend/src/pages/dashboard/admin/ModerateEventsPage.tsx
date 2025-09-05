@@ -12,7 +12,7 @@ export default function ModerateEventsPage() {
   const current = Object.fromEntries(searchParams.entries())
 
   const page = Number(current.page || 1)
-  const perPage = Number(current.per_page || 12)
+  const perPage = Number(current.per_page || 6)
   const q = current.q || ''
 
   const { data, isLoading, isError } = useQuery({

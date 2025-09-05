@@ -139,7 +139,9 @@ export default function CreateEventPage() {
             <FormField control={form.control} name="capacity" render={({ field }) => (
               <FormItem>
                 <FormLabel>Capacité</FormLabel>
-                <FormControl><Input type="number" min={1} {...field} /></FormControl>
+                <FormControl>
+                  <Input type="number" min={1} {...field} onChange={(e) => field.onChange(e.target.valueAsNumber)} />
+                  </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -147,7 +149,9 @@ export default function CreateEventPage() {
             <FormField control={form.control} name="price" render={({ field }) => (
               <FormItem>
                 <FormLabel>Prix (€)</FormLabel>
-                <FormControl><Input type="number" step="0.01" min={0} {...field} /></FormControl>
+                <FormControl>
+                  <Input type="number" step="0.01" min={0} {...field} onChange={(e) => field.onChange(e.target.valueAsNumber)} />
+                  </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
